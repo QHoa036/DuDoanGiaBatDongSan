@@ -1,3 +1,4 @@
+# MARK: - Thư Viện
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ import plotly.graph_objects as go
 from pyspark.sql import SparkSession
 import os
 
+# MARK: - Cài Đặt & Tải Dữ Liệu
 def initialize_spark_session(app_name="RealEstateVisualization"):
     """Khởi tạo và trả về một phiên Spark."""
     spark = SparkSession.builder \
@@ -30,6 +32,7 @@ def create_output_dir(output_dir="visualizations"):
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
 
+# MARK: - Trực Quan Hóa Tĩnh
 def plot_price_distribution(df, output_dir):
     """Vẽ biểu đồ phân phối giá."""
     fig, ax = plt.subplots(1, 2, figsize=(15, 6))
@@ -146,6 +149,7 @@ def plot_time_trends(df, output_dir):
 
         print("Time trend plots created")
 
+# MARK: - Trực Quan Hóa Tương Tác
 def create_interactive_map(df, output_dir):
     """Tạo bản đồ tương tác các vị trí bất động sản."""
     # Đây là phiên bản đơn giản hóa không có mã hóa địa lý thực tế
@@ -250,8 +254,9 @@ def create_plotly_visualizations(df, output_dir):
 
     print("Interactive Plotly visualizations created")
 
+# MARK: - Tạo Dashboard
 def create_dashboard_template(output_dir):
-    """Create a simple HTML dashboard template."""
+    """Tạo một mẫu dashboard HTML đơn giản."""
     html_content = """
     <!DOCTYPE html>
     <html lang="en">
@@ -344,8 +349,9 @@ def create_dashboard_template(output_dir):
 
     print("Dashboard template created")
 
+# MARK: - Quy Trình Tổng Thể
 def create_visualizations(data_path, output_dir="visualizations"):
-    """Main function to create all visualizations."""
+    """Hàm chính để tạo tất cả các biểu đồ trực quan hóa."""
     # Initialize Spark
     spark = initialize_spark_session()
 
@@ -376,9 +382,10 @@ def create_visualizations(data_path, output_dir="visualizations"):
         # Stop Spark session
         spark.stop()
 
+# MARK: - Thực Thi
 if __name__ == "__main__":
-    # Path to processed data
-    data_path = "processed_data/part-00000-*.csv"  # Adjust based on your file naming
+    # Đường dẫn đến dữ liệu đã xử lý
+    data_path = "processed_data/part-00000-*.csv"  # Điều chỉnh dựa trên cách đặt tên file của bạn
 
     # Create visualizations
     create_visualizations(data_path)

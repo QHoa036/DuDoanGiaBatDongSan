@@ -1,3 +1,4 @@
+# MARK: - Thư Viện
 import pandas as pd
 import csv
 import random
@@ -12,6 +13,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+# MARK: - Helper
 def get_random_user_agent():
     """Trả về một chuỗi user-agent ngẫu nhiên để tránh bị phát hiện."""
     user_agents = [
@@ -61,6 +63,7 @@ def get_nearby_amenities(driver):
 
     return amenities
 
+# MARK: - Thu Thập Dữ Liệu Chi Tiết
 def get_property_details(property_url):
     """Thu thập thông tin chi tiết cho một bất động sản bao gồm đặc điểm, tiện ích, v.v."""
     # Cấu hình trình duyệt Chrome để tự động hóa việc truy cập web
@@ -137,6 +140,7 @@ def get_property_details(property_url):
         # Điều này giúp giải phóng tài nguyên và tránh rò rỉ bộ nhớ
         driver.quit()
 
+# MARK: - Quản Lý Dữ Liệu
 def read_property_urls(file_path):
     """Đọc các URL bất động sản từ file CSV."""
     # Đọc file CSV vào DataFrame của pandas
@@ -198,10 +202,17 @@ def update_status(file_path, url, status="processed"):
     # In thông báo cập nhật trạng thái thành công
     print(f"Cập nhật trạng thái cho {url} thành {status}")
 
+# MARK: - Thực Thi Chính
 def main(input_file="raw_real_estate_data.csv", output_file="property_details.csv"):
     """Hàm chính để xử lý các URL bất động sản và lấy thông tin chi tiết."""
+    # Xác định đường dẫn đầy đủ tới Data folder
+    import os
+    data_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Data')
+    input_path = os.path.join(data_folder, input_file)
+    output_path = os.path.join(data_folder, output_file)
+
     # Đọc danh sách các URL bất động sản từ file đầu vào
-    property_links = read_property_urls(input_file)
+    property_links = read_property_urls(input_path)
     # In số lượng bất động sản cần xử lý
     print(f"Đã tìm thấy {len(property_links)} bất động sản cần xử lý")
 
@@ -214,28 +225,28 @@ def main(input_file="raw_real_estate_data.csv", output_file="property_details.cs
 
         try:
             # Lấy thông tin chi tiết từ URL bất động sản
-            details = get_property_details(url)
-            if details:
-                # Nếu lấy thông tin thành công, thêm vào file CSV đầu ra
-                append_to_csv(details, output_file)
-                # Cập nhật trạng thái thành 'processed' trong file đầu vào
-                update_status(input_file, url)
+            property_info = get_property_details(url)
+            if property_info:
+                # Thêm thông tin đã lấy vào file đầu ra
+                append_to_csv(property_info, output_path)
+                # Cập nhật trạng thái của URL bất động sản thành 'processed'
+                update_status(input_path, url, "processed")
             else:
                 # Nếu không lấy được thông tin, đánh dấu là 'failed' trong file đầu vào
-                update_status(input_file, url, "failed")
+                update_status(input_path, url, "failed")
 
             # Thêm độ trễ ngẫu nhiên từ 1-3 giây để tránh bị phát hiện là bot
             # Điều này giúp giảm thiểu nguy cơ bị chặn IP hoặc CAPTCHA
             time.sleep(random.uniform(1, 3))
 
         except Exception as e:
-            # Xử lý các ngoại lệ có thể xảy ra trong quá trình xử lý từng URL
-            print(f"Lỗi khi xử lý {url}: {e}")
-            # Cập nhật trạng thái thành 'error' trong file đầu vào để có thể thử lại sau
-            update_status(input_file, url, "error")
+            # In thông báo lỗi nếu có ngoại lệ xảy ra
+            print(f"Lỗi khi xử lý {url}: {str(e)}")
+            # Cập nhật trạng thái của URL bất động sản thành 'error'
+            update_status(input_path, url, "error")
 
     # In thông báo hoàn thành quá trình xử lý và đường dẫn file kết quả
-    print(f"Hoàn tất xử lý. Kết quả đã được lưu vào {output_file}")
+    print(f"Hoàn tất xử lý. Kết quả đã được lưu vào {output_path}")
 
 # Điểm vào của chương trình
 if __name__ == "__main__":

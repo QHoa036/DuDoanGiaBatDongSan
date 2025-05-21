@@ -249,54 +249,56 @@ run_streamlit_with_ngrok() {
     fi
 
     if [[ $use_ngrok == "y" || $use_ngrok == "Y" ]]; then
-        echo "Nhập ngrok authtoken của bạn (đăng ký tại ngrok.com):"
-        read -s ngrok_token
+        # Kiểm tra xem file .env.local có tồn tại và có chứa NGROK_TOKEN
+        if [ -f ".env.local" ] && grep -q "NGROK_TOKEN=" ".env.local"; then
+            # Đọc token từ file .env.local
+            ngrok_token=$(grep "NGROK_TOKEN=" ".env.local" | cut -d'=' -f2)
 
-        echo "Cấu hình ngrok và khởi chạy Streamlit..."
+            # Kiểm tra xem token có giá trị hay không hoặc có phải là placeholder
+            if [ -z "$ngrok_token" ] || [ "$ngrok_token" = "<your_ngrok_token>" ]; then
+                echo "⚠️ Cần có ngrok token hợp lệ để tiếp tục."
+                echo "🔑 Vui lòng nhập ngrok authtoken của bạn (đăng ký tại ngrok.com):"
+                read -s ngrok_token
+                
+                # Kiểm tra nếu người dùng không nhập gì hoặc nhập placeholder
+                if [ -z "$ngrok_token" ] || [ "$ngrok_token" = "<your_ngrok_token>" ]; then
+                    echo "❌ Bạn phải cung cấp ngrok token hợp lệ để sử dụng tính năng này!"
+                    echo "🛑 Đang thoát chương trình..."
+                    return 1
+                fi
+                
+                # Cập nhật file .env.local với token mới
+                sed -i '' "s/NGROK_TOKEN=.*/NGROK_TOKEN=$ngrok_token/" .env.local
+            else
+                echo "🔑 Đã tìm thấy ngrok token trong file .env.local"
+            fi
+        else
+            echo "🔑 Nhập ngrok authtoken của bạn (đăng ký tại ngrok.com):"
+            read -s ngrok_token
+            
+            # Kiểm tra nếu người dùng không nhập gì hoặc nhập placeholder
+            if [ -z "$ngrok_token" ] || [ "$ngrok_token" = "<your_ngrok_token>" ]; then
+                echo "❌ Bạn phải cung cấp ngrok token hợp lệ để sử dụng tính năng này!"
+                echo "🛑 Đang thoát chương trình..."
+                return 1
+            fi
+            
+            # Lưu token vào file .env.local
+            if [ -f ".env.local" ]; then
+                echo "NGROK_TOKEN=$ngrok_token" >>.env.local
+            else
+                echo "NGROK_TOKEN=$ngrok_token" >.env.local
+            fi
+        fi
 
-        # Lấy đường dẫn đầy đủ tới streamlit trong môi trường ảo
-        STREAMLIT_PATH=$(get_streamlit_path)
-        # Ghi ra console để debug
-        echo "Sử dụng Streamlit tại: $STREAMLIT_PATH"
+        echo "⚙️ Cấu hình ngrok và khởi chạy Streamlit..."
 
-        # Tạo file python tạm để khởi chạy ngrok
-        cat >run_streamlit_ngrok.py <<EOF
-import os
-import subprocess
-import time
-from pyngrok import ngrok
+        # Lấy đường dẫn Python trong môi trường ảo
+        PYTHON_PATH=$(get_python_path)
+        echo "Sử dụng Python tại: $PYTHON_PATH"
 
-# Cấu hình ngrok
-ngrok_token = "$ngrok_token"
-ngrok.set_auth_token(ngrok_token)
-
-# Khởi chạy Streamlit trong tiến trình con
-# Sử dụng đường dẫn đầy đủ tới streamlit thay vì chỉ 'streamlit'
-streamlit_process = subprocess.Popen(["$STREAMLIT_PATH", "run", "App/6_streamlit_app.py"])
-
-# Khởi tạo tunnel
-http_tunnel = ngrok.connect(addr="8501", proto="http", bind_tls=True)
-print("\n" + "="*50)
-print(f"URL NGROK PUBLIC: {http_tunnel.public_url}")
-print("Chia sẻ URL này để cho phép người khác truy cập ứng dụng của bạn")
-print("="*50 + "\n")
-
-try:
-    # Giữ script chạy
-    while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    # Dọn dẹp khi người dùng nhấn Ctrl+C
-    print("\nĐang dừng ứng dụng...")
-    ngrok.kill()
-    streamlit_process.terminate()
-EOF
-
-        # Chạy file python tạm với môi trường ảo
-        $(get_python_path) run_streamlit_ngrok.py
-
-        # Xóa file tạm sau khi chạy
-        rm run_streamlit_ngrok.py
+        # Chạy script ngrok từ thư mục App
+        $PYTHON_PATH App/run_with_ngrok.py
     else
         echo "Khởi chạy Streamlit trên localhost:8501..."
         $(get_streamlit_path) run App/6_streamlit_app.py

@@ -1,9 +1,9 @@
+# MARK: - Thư Viện
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, when, regexp_replace, split, trim, element_at, lit, sum, mean
-from pyspark.sql.types import DoubleType, IntegerType, FloatType
-import re
+from pyspark.sql.functions import col, when, regexp_replace, split, trim, element_at, lit, sum
 import os
 
+# MARK: - Cài Đặt Spark
 def initialize_spark_session(app_name="RealEstatePreprocessing"):
     """Khởi tạo và trả về một phiên Spark."""
     spark = SparkSession.builder \
@@ -12,6 +12,7 @@ def initialize_spark_session(app_name="RealEstatePreprocessing"):
         .getOrCreate()
     return spark
 
+# MARK: - Tải & Kiểm Tra Dữ Liệu
 def load_data(spark, file_path):
     """Đọc dữ liệu từ file CSV vào DataFrame Spark."""
     df = spark.read.option("header", True).option("encoding", "utf-8").csv(file_path)
@@ -26,6 +27,7 @@ def check_missing_values(df):
     df.select([sum(col(c).isNull().cast("int")).alias(c) for c in df.columns]).show()
     return df
 
+# MARK: - Tiền Xử Lý Dữ Liệu
 def drop_unnecessary_columns(df, columns_to_drop):
     """Loại bỏ các cột không cần thiết khỏi DataFrame."""
     df_cleaned = df.drop(*columns_to_drop)
@@ -53,6 +55,7 @@ def handle_null_values(df):
     print("Đã xử lý các giá trị null")
     return df
 
+# MARK: - Xử Lý Đặc Trưng
 def process_location(df):
     """Xử lý cột vị trí để trích xuất quận/huyện và thành phố/tỉnh."""
     # Trích xuất quận/huyện và thành phố/tỉnh từ vị trí
@@ -159,8 +162,9 @@ def process_street(df):
     print("Đã xử lý cột đường thành độ rộng đường")
     return df
 
+# MARK: - Tính Toán & Chuẩn Hóa
 def calculate_price_per_m2(df):
-    """Calculate price per square meter."""
+    """Tính giá trên mỗi mét vuông."""
     df = df.withColumn(
         "price_per_m2",
         when(col("area") > 0, col("price") / col("area")).otherwise(None)
@@ -196,8 +200,9 @@ def rename_columns(df):
     print("Đã đổi tên các cột")
     return df
 
+# MARK: - Lưu Trữ Dữ Liệu
 def save_processed_data(df, output_path):
-    """Save the processed DataFrame to CSV."""
+    """Lưu DataFrame đã xử lý vào CSV."""
     # Save as a single CSV file
     df.coalesce(1).write.csv(output_path, header=True, mode='overwrite')
 
@@ -211,8 +216,9 @@ def save_processed_data(df, output_path):
 
     return output_path
 
+# MARK: - Quy Trình Tổng Thể
 def preprocess_data(input_file, output_path):
-    """Main function to preprocess real estate data."""
+    """Hàm chính để tiền xử lý dữ liệu bất động sản."""
     # Initialize Spark session
     spark = initialize_spark_session()
 
@@ -250,8 +256,9 @@ def preprocess_data(input_file, output_path):
         # Stop Spark session
         spark.stop()
 
+# MARK: - Thực Thi
 if __name__ == "__main__":
-    # File paths
+    # Đường dẫn file
     input_file = "raw_real_estate_data.csv"
     output_dir = "processed_data"
 

@@ -1,3 +1,4 @@
+# MARK: - Thư Viện
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -11,6 +12,7 @@ from pyspark.ml.regression import GBTRegressionModel
 from pyspark.sql.functions import col, struct, lit
 from pyspark.sql.types import DoubleType, StringType
 
+# MARK: - Cấu Hình Ứng Dụng
 # Cấu hình trang
 st.set_page_config(
     page_title="Dự Đoán Giá Bất Động Sản Việt Nam",
@@ -19,6 +21,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# MARK: - Hàm Tiện Ích
 # Hàm khởi tạo phiên Spark
 @st.cache_resource
 def get_spark_session():
@@ -73,10 +76,12 @@ def predict_price(pipeline_model, regression_model, input_data):
 
     return predicted_price
 
+# MARK: - Cấu Hình Giao Diện
 # Thanh bên cho điều hướng
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Home", "Price Prediction", "Data Exploration", "About"])
 
+# MARK: - Tải Dữ Liệu & Mô Hình
 # Tải dữ liệu và mô hình
 try:
     data = load_data()
@@ -86,6 +91,7 @@ except Exception as e:
     st.error(f"Error loading data or model: {e}")
     model_loaded = False
 
+# MARK: - Trang Chủ
 # Home page
 if page == "Home":
     st.title("Vietnam Real Estate Price Prediction")
@@ -134,6 +140,7 @@ if page == "Home":
         cities = data["city_province"].nunique()
         st.metric("Cities/Provinces", cities)
 
+# MARK: - Trang Dự Đoán Giá
 # Price Prediction page
 elif page == "Price Prediction":
     st.title("Real Estate Price Prediction")
@@ -239,6 +246,7 @@ elif page == "Price Prediction":
                 except Exception as e:
                     st.error(f"Error making prediction: {e}")
 
+# MARK: - Trang Khám Phá Dữ Liệu
 # Data Exploration page
 elif page == "Data Exploration":
     st.title("Real Estate Data Exploration")
@@ -360,6 +368,7 @@ elif page == "Data Exploration":
         plt.tight_layout()
         st.pyplot(fig)
 
+# MARK: - Trang Giới Thiệu
 # About page
 else:
     st.title("About This Project")
@@ -409,6 +418,7 @@ else:
     except:
         st.write("Feature importance plot not available.")
 
+# MARK: - Chân Trang
 # Footer
 st.markdown("""
 ---

@@ -1,4 +1,4 @@
-# MARK: - Import Libraries
+# MARK: - Thư viện
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -28,7 +28,7 @@ st.set_page_config(
     page_title="Dự Đoán Giá Bất Động Sản Việt Nam",
     page_icon="🏠",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto",
 )
 
 # Load CSS từ file riêng biệt để tạo giao diện hiện đại
@@ -46,7 +46,7 @@ def load_css(css_file):
 # Load CSS từ file riêng biệt
 css_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'styles', 'main.css')
 if not load_css(css_path):
-    st.error(f"Failed to load CSS from {css_path}. UI may not display correctly.")
+    st.error("Failed to load CSS from {css_path}. UI may not display correctly.")
     st.markdown("""
     <style>
     .sidebar-header {background: linear-gradient(to right, #2c5282, #1a365d); padding: 1.5rem 1rem; text-align: center; margin-bottom: 1.6rem; border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: 0.8rem;}
@@ -59,8 +59,6 @@ if not load_css(css_path):
     .green-gradient {background: linear-gradient(145deg, rgba(44,130,96,0.5), rgba(26,93,59,0.7)); border-color: rgba(76,255,154,0.3);}
     </style>
     """, unsafe_allow_html=True)
-
-
 
 # MARK: - Khởi tạo phiên Spark
 @st.cache_resource
@@ -84,20 +82,44 @@ def get_spark_session():
 # MARK: - Đọc dữ liệu
 @st.cache_data
 def load_data(file_path=None):
-    """Đọc dữ liệu bất động sản từ file CSV."""
-    try:
-        # Xác định đường dẫn tuyệt đối đến file dữ liệu
-        if file_path is None:
-            # Đường dẫn tương đối từ thư mục gốc của dự án
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            file_path = os.path.join(base_dir, 'Data', 'Final Data Cleaned.csv')
+    """Đọc dữ liệu từ file CSV."""
+    # Xác định đường dẫn tuyệt đối đến file dữ liệu
+    if file_path is None:
+        # Đường dẫn tương đối từ thư mục gốc của dự án
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, 'data', 'Final Data Cleaned.csv')
+        
+        # Kiểm tra xem file có tồn tại không
+        if not os.path.exists(file_path):
+            # Thử tìm file ở vị trí khác
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            alternate_paths = [
+                os.path.join(project_root, 'Data', 'Demo', 'Final Data Cleaned.csv'),
+                os.path.join(project_root, 'Data', 'Final Data Cleaned.csv'),
+                os.path.join(project_root, 'Demo', 'data', 'Final Data Cleaned.csv')
+            ]
+            
+            for alt_path in alternate_paths:
+                if os.path.exists(alt_path):
+                    file_path = alt_path
+                    break
+            else:
+                # Nếu không tìm thấy file ở bất kỳ vị trí nào
+                raise FileNotFoundError(
+                    f"❌ Không tìm thấy file dữ liệu tại: {file_path}\n"
+                    "Vui lòng đảm bảo rằng:\n"
+                    "1. Bạn đã tải dữ liệu và đặt trong thư mục Demo/data/\n"
+                    "2. File được đặt tên chính xác là 'Final Data Cleaned.csv'\n"
+                    "3. Bạn đã chạy toàn bộ quy trình từ đầu bằng run_demo.sh"
+                )
 
+    try:
         # Đọc dữ liệu bằng pandas
         df = pd.read_csv(file_path)
         return df
     except Exception as e:
-        st.error(f"Lỗi khi đọc dữ liệu: {e}")
-        return pd.DataFrame()
+        # Xử lý lỗi khi đọc file
+        raise Exception(f"❌ Lỗi khi đọc file dữ liệu: {str(e)}")
 
 # MARK: - Xử lý dữ liệu
 @st.cache_data
@@ -345,7 +367,6 @@ def predict_price(model, input_data):
 # MARK: - Kết nối Ngrok
 def run_ngrok():
     """Kết nối ứng dụng Streamlit với ngrok để tạo URL public."""
-    # Thiết lập ngrok - Người dùng cần nhập authtoken
     st.sidebar.subheader("Kết nối Ngrok")
 
     ngrok_auth_token = st.sidebar.text_input("Nhập Ngrok Authtoken", type="password")
@@ -428,10 +449,9 @@ menu_container = st.sidebar.container()
 # Tạo các button
 for i, mode in enumerate(app_modes):
     if menu_container.button(mode, key=f"nav_{i}",
-                           use_container_width=True,
-                           on_click=set_app_mode,
-                           args=(mode,),
-                           type="primary" if mode == app_mode else "secondary"):
+                        use_container_width=True,
+                        on_click=set_app_mode,
+                        args=(mode,)):
         pass
 
 # Hiển thị thông tin mô hình trong nhóm
@@ -575,6 +595,7 @@ if app_mode == "Dự đoán giá":
             liability = st.selectbox("Tình trạng pháp lý", liability_options, key='liability')
 
         st.markdown('</div>', unsafe_allow_html=True)
+
 
     with col2:
         # Card thông tin phòng ốc
@@ -1196,10 +1217,8 @@ elif app_mode == "Phân tích dữ liệu":
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        # Thêm khoảng trống
-        st.markdown('<div style="height: 30px;"></div>', unsafe_allow_html=True)
-
         # Card 2: Ma trận tương quan
+        st.markdown('<div style="height: 30px;"></div>', unsafe_allow_html=True)
         st.markdown("""
         <div class="chart-card">
             <div class="chart-header">
@@ -1230,10 +1249,8 @@ elif app_mode == "Phân tích dữ liệu":
         plt.title("Ma trận tương quan giữa các đặc điểm")
         st.pyplot(fig)
 
-        # Thêm khoảng trống
-        st.markdown('<div style="height: 30px;"></div>', unsafe_allow_html=True)
-
         # Card 3: Phân tích theo đặc điểm
+        st.markdown('<div style="height: 30px;"></div>', unsafe_allow_html=True)
         st.markdown("""
         <div class="chart-card">
             <div class="chart-header">
@@ -1563,7 +1580,6 @@ elif app_mode == "Thống kê":
                     break
 
         if area_column is None:
-            # Tìm cột số khác nếu không có area
             for col in data.columns:
                 if col != price_column and pd.api.types.is_numeric_dtype(data[col]):
                     area_column = col
@@ -1630,7 +1646,7 @@ elif app_mode == "Thống kê":
         # Tính giá cao nhất và thấp nhất (không tính ngoại lệ)
         if price_column in data.columns:
             price_range = data[data[price_column] < data[price_column].quantile(0.99)][price_column].max() - \
-                          data[data[price_column] > data[price_column].quantile(0.01)][price_column].min()
+                        data[data[price_column] > data[price_column].quantile(0.01)][price_column].min()
 
         # Hiển thị thống kê trong grid
         st.markdown('<div style="height: 15px;"></div>', unsafe_allow_html=True)
@@ -1699,11 +1715,11 @@ elif app_mode == "Thống kê":
 
             # Vẽ biểu đồ scatter plot
             fig5 = px.scatter(filtered_data, x=area_column, y=price_column,
-                          labels={area_column:'Diện tích (m²)', price_column:'Giá (triệu VNĐ)'},
-                          opacity=0.6,
-                          color=location_column if location_column in filtered_data.columns else None,
-                          size_max=10,
-                          height=500)
+                        labels={area_column:'Diện tích (m²)', price_column:'Giá (triệu VNĐ)'},
+                        opacity=0.6,
+                        color=location_column if location_column in filtered_data.columns else None,
+                        size_max=10,
+                        height=500)
 
             # Cập nhật layout của biểu đồ
             fig5.update_layout(
@@ -1766,8 +1782,8 @@ elif app_mode == "Thống kê":
 
                     # Vẽ ma trận tương quan
                     fig6 = px.imshow(corr_data,
-                               text_auto=True,
-                               color_continuous_scale='RdBu_r')
+                            text_auto=True,
+                            color_continuous_scale='RdBu_r')
 
                     # Cập nhật layout của biểu đồ
                     fig6.update_layout(
@@ -1800,7 +1816,6 @@ elif app_mode == "Về dự án":
     </div>
     """, unsafe_allow_html=True)
 
-    # Các thẻ thông tin được thiết kế lại với UI hiện đại
     # Giới thiệu tổng quan
     st.markdown("""
     <div class="about-card">
@@ -1852,10 +1867,10 @@ elif app_mode == "Về dự án":
     """, unsafe_allow_html=True)
 
     # Bộ dữ liệu
-    # Tách phần HTML cố định và phần có biến để tránh lỗi hiển thị
     # Đảm bảo tất cả thông tin về dữ liệu nằm trong card
     dataset_data_count = f"{len(data):,}"
-    dataset_html = f"""
+
+    st.markdown("""
     <div class="about-card">
         <div class="about-card-title">
             <svg class="about-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1875,16 +1890,14 @@ elif app_mode == "Về dự án":
         </div>
         <p>Dữ liệu được thu thập và làm sạch, sau đó được sử dụng để huấn luyện mô hình dự đoán giá bất động sản chính xác.</p>
     </div>
-    """
-
-    st.markdown(dataset_html, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
     # Quy trình xử lý dữ liệu
     # Định dạng các giá trị mô hình
     r2_score_formatted = "{:.4f}".format(r2_score) if 'r2_score' in globals() else "0.8765"
     rmse_formatted = "{:.4f}".format(rmse) if 'rmse' in globals() else "0.1234"
 
-    process_html = f"""
+    st.markdown("""
     <div class="about-card">
         <div class="about-card-title">
             <svg class="about-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1911,44 +1924,6 @@ elif app_mode == "Về dự án":
                     <p>Sử dụng Gradient Boosted Trees và các thuật toán học máy tiên tiến</p>
                 </li>
             </ol>
-        </div>
-    </div>
-    """
-
-    st.markdown(process_html, unsafe_allow_html=True)
-
-    # Nhóm phát triển
-    st.markdown("""
-    <div class="about-card">
-        <div class="about-card-title">
-            <svg class="about-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/>
-            </svg>
-            <h2>Nhóm phát triển</h2>
-        </div>
-        <div class="about-card-content">
-            <p>Dự án được thực hiện bởi sinh viên ngành <strong>Khoa học dữ liệu</strong>:</p>
-            <div class="team-member">
-                <div class="team-avatar">NT</div>
-                <div>
-                    <div style="font-weight: 600;">Nguyễn Tiến Minh Đức</div>
-                    <div style="font-size: 0.9rem; opacity: 0.7;">MSSV: 1234567</div>
-                </div>
-            </div>
-            <div class="team-member">
-                <div class="team-avatar">HN</div>
-                <div>
-                    <div style="font-weight: 600;">Hoàng Thị Hải Ngọc</div>
-                    <div style="font-size: 0.9rem; opacity: 0.7;">MSSV: 1234568</div>
-                </div>
-            </div>
-            <div class="team-member">
-                <div class="team-avatar">NH</div>
-                <div>
-                    <div style="font-weight: 600;">Nguyễn Bá Quốc Huy</div>
-                    <div style="font-size: 0.9rem; opacity: 0.7;">MSSV: 1234569</div>
-                </div>
-            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -1986,4 +1961,7 @@ elif app_mode == "Về dự án":
     </div>
     """, unsafe_allow_html=True)
 
-
+st.markdown("""
+---
+© 2025 Vietnam Real Estate Price Prediction Project
+""")

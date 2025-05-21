@@ -1,3 +1,4 @@
+# MARK: - Thư Viện
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, log1p, expm1, when
 from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler, StandardScaler
@@ -10,6 +11,7 @@ import numpy as np
 import shutil
 import os
 
+# MARK: - Cài Đặt Spark
 def initialize_spark_session(app_name="RealEstateModelTraining"):
     """Khởi tạo và trả về một phiên Spark cho việc huấn luyện mô hình."""
     spark = SparkSession.builder \
@@ -18,6 +20,7 @@ def initialize_spark_session(app_name="RealEstateModelTraining"):
         .getOrCreate()
     return spark
 
+# MARK: - Tải & Chuẩn Bị Dữ Liệu
 def load_processed_data(spark, data_path):
     """Đọc dữ liệu đã xử lý từ CSV hoặc HDFS."""
     df = spark.read.option("header", True).csv(data_path)
@@ -46,6 +49,7 @@ def prepare_data_for_modeling(df):
     print("Dữ liệu đã được chuẩn bị cho việc mô hình hóa")
     return df
 
+# MARK: - Xây Dựng Pipeline & Mô Hình
 def create_model_pipeline(categorical_cols, numeric_cols, binary_cols):
     """Tạo pipeline ML cho việc xử lý đặc trưng và huấn luyện mô hình."""
     # StringIndexer cho các đặc trưng phân loại
@@ -97,6 +101,7 @@ def split_data(df, train_ratio=0.8, seed=42):
     print(f"Tập kiểm tra: {test_df.count()} bản ghi")
     return train_df, test_df
 
+# MARK: - Huấn Luyện & Đánh Giá
 def train_models(train_df, test_df, feature_col="scaled_features", label_col="price_log"):
     """Huấn luyện và đánh giá các mô hình hồi quy khác nhau."""
     # Hồi quy tuyến tính
@@ -161,8 +166,9 @@ def evaluate_model(pred_df, actual_col="price_per_m2", pred_col="prediction"):
         "R2": evaluator_r2.evaluate(pred_df)
     }
 
+# MARK: - Lưu Trữ & Trực Quan Hóa
 def save_best_model(model, pipeline_model, output_dir):
-    """Save the best performing model and pipeline to disk."""
+    """Lưu mô hình có hiệu suất tốt nhất và pipeline vào đĩa."""
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
@@ -212,8 +218,9 @@ def plot_feature_importance(model, feature_names, output_file=None):
     else:
         print("Mô hình này không hỗ trợ tính năng hiển thị mức độ quan trọng của đặc trưng")
 
+# MARK: - Quy Trình Tổng Thể
 def train_real_estate_model(data_path, output_dir="model"):
-    """Main function to train the real estate price prediction model."""
+    """Hàm chính để huấn luyện mô hình dự đoán giá bất động sản."""
     # Initialize Spark
     spark = initialize_spark_session()
 
@@ -285,9 +292,10 @@ def train_real_estate_model(data_path, output_dir="model"):
         # Stop Spark session
         spark.stop()
 
+# MARK: - Thực Thi
 if __name__ == "__main__":
-    # Path to processed data
-    data_path = "processed_data/part-00000-*.csv"  # Adjust based on your file naming
+    # Đường dẫn đến dữ liệu đã xử lý
+    data_path = "processed_data/part-00000-*.csv"  # Điều chỉnh dựa trên cách đặt tên file của bạn
 
     # Output directory for model
     output_dir = "real_estate_model"

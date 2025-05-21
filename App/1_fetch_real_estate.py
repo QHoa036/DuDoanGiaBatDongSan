@@ -1,13 +1,12 @@
+# MARK: - Thư Viện
 import time
 import random
 import pandas as pd
 from selenium import webdriver
-from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException, TimeoutException
-from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
+# MARK: - Helper
 def get_random_user_agent():
     """Trả về một chuỗi user-agent ngẫu nhiên để tránh bị phát hiện."""
     user_agents = [
@@ -25,6 +24,7 @@ def safe_get_text(driver, xpath):
     except (NoSuchElementException, StaleElementReferenceException):
         return ""
 
+# MARK: - Thu Thập Dữ Liệu Web
 def fetch_real_estate_listings(base_url, num_pages=5):
     """
     Lấy danh sách bất động sản từ nhadat.cafeland.vn
@@ -129,12 +129,14 @@ def fetch_real_estate_listings(base_url, num_pages=5):
 
     return property_data
 
+# MARK: - Lưu Trữ Dữ Liệu
 def save_to_csv(data, filename="raw_bat_dong_san.csv"):
-    """Lưu dữ liệu đã thu thập vào file CSV trong thư mục Data."""
+    """Lưu dữ liệu đã thu thập vào file CSV trong thư mục App/data."""
     import os
 
-    # Tạo thư mục Data nếu nó chưa tồn tại
-    data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Data")
+    # Tạo thư mục App/data nếu nó chưa tồn tại
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(current_dir, "data")
     os.makedirs(data_dir, exist_ok=True)
 
     # Đường dẫn đầy đủ đến file
@@ -147,6 +149,7 @@ def save_to_csv(data, filename="raw_bat_dong_san.csv"):
     print(f"Dữ liệu đã được lưu vào {file_path}")
     return file_path
 
+# MARK: - Thực Thi Chính
 if __name__ == "__main__":
     BASE_URL = "https://nhadat.cafeland.vn/nha-dat-ban"
 

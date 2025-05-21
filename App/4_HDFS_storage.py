@@ -1,7 +1,9 @@
+# MARK: - Thư Viện
 import os
 import subprocess
 from pyspark.sql import SparkSession
 
+# MARK: - Cài Đặt Spark
 def initialize_spark_session(app_name="HDFSStorage"):
     """Khởi tạo và trả về một phiên Spark."""
     spark = SparkSession.builder \
@@ -10,6 +12,7 @@ def initialize_spark_session(app_name="HDFSStorage"):
         .getOrCreate()
     return spark
 
+# MARK: - Thao Tác HDFS
 def upload_to_hdfs(local_path, hdfs_path):
     """Đưa một file từ hệ thống file cục bộ lên HDFS."""
     try:
@@ -70,6 +73,7 @@ def delete_from_hdfs(hdfs_path):
         print(f"Lỗi khi xóa tập tin từ HDFS: {e}")
         return False
 
+# MARK: - Thực Thi
 if __name__ == "__main__":
     # Ví dụ sử dụng
     spark = initialize_spark_session()

@@ -11,23 +11,10 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
     font-family: 'Literata', serif !important;
 }
 
-/* Main content area styling */
-.main {
-    background-color: #f8f9fa;
-    margin-left: 250px;
-    padding: 1rem 2rem;
-}
-
 /* MARK: - Sidebar Styling */
 [data-testid="stSidebar"] {
     background-color: #1a202c;
-    padding-top: 0;
-    min-width: 280px !important;
-    max-width: 280px !important;
-}
-
-[data-testid="stSidebar"] .css-6qob1r {
-    background-color: #1a202c;
+    width: 280px !important;
 }
 
 /* Sidebar header styling */
@@ -58,29 +45,6 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
 }
 
 /* MARK: - Sidebar Navigation */
-/* Sidebar navigation styling */
-.nav-link {
-    display: block;
-    padding: 0.75rem 1rem;
-    margin: 0.25rem 0.75rem;
-    border-radius: 0.5rem;
-    text-decoration: none;
-    color: white !important;
-    transition: all 0.2s ease;
-}
-
-.nav-link:hover {
-    background-color: rgba(255,255,255,0.1);
-}
-
-.nav-link.active {
-    background-color: #4c9aff;
-    color: white !important;
-    font-weight: 600;
-}
-
-/* Sidebar text color */
-[data-testid="stSidebar"] .css-eczf16,
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3,
@@ -382,13 +346,6 @@ div[data-testid="stMetricLabel"] {
 }
 
 /* MARK: - Navigation Buttons */
-.nav-button {
-    width: 100% !important;
-    text-align: center !important;
-    padding: 0.6rem 0.5rem !important;
-    margin: 0.25rem 0 !important;
-    border-radius: 0.5rem !important;
-}
 
 button[kind="secondary"], button[kind="primary"] {
     width: 100% !important;
@@ -396,44 +353,15 @@ button[kind="secondary"], button[kind="primary"] {
     display: flex !important;
     align-items: center !important;
     padding: 0.6rem 0.5rem !important;
-    margin: 0.25rem 0 !important;
-    border-radius: 0.5rem !important;
+    margin: 0.15rem 0 !important;
+    border-radius: 1rem !important;
 }
 
 button[kind="secondary"] p, button[kind="primary"] p {
     width: 100% !important;
-    text-align: center !important;
+    text-align: start !important;
     margin: 0 !important;
     padding: 0 !important;
-}
-
-/* MARK: - Sidebar Specific Buttons */
-.sidebar-nav-button {
-    width: 100%;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    text-align: center !important;
-    padding: 0.6rem 0.5rem !important;
-    margin: 0.25rem 0 !important;
-    border-radius: 0.5rem !important;
-    color: white !important;
-    background-color: rgba(44, 52, 75, 0.5) !important;
-    border: none !important;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.95rem !important;
-    line-height: 1.2;
-}
-
-.sidebar-nav-button:hover {
-    background-color: rgba(76, 154, 255, 0.7) !important;
-}
-
-.sidebar-nav-button-active {
-    background-color: #4c9aff !important;
-    color: white !important;
-    font-weight: 500 !important;
 }
 
 /* Additional button styling */
