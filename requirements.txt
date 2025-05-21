@@ -1,5 +1,4 @@
 # File requirements.txt cho dự án Dự đoán giá bất động sản Việt Nam
-# Tạo bởi Cascade AI ngày 15/05/2025
 
 # Web scraping và tự động hóa
 selenium>=4.12.0

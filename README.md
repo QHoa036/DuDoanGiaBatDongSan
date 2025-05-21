@@ -120,7 +120,7 @@ def predict_price(pipeline_model, regression_model, input_data):
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/Vietnam_Real_Estate_Price_Prediction.git
+   git clone https://github.com/QHoa036/Vietnam_Real_Estate_Price_Prediction.git
    cd Vietnam_Real_Estate_Price_Prediction
    ```
 

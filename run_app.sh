@@ -5,6 +5,22 @@
 
 echo "===== KHỞI CHẠY ỨNG DỤNG DỰ ĐOÁN GIÁ BẤT ĐỘNG SẢN VIỆT NAM ====="
 
+# Phát hiện hệ điều hành
+DETECT_OS="unknown"
+case "$(uname -s)" in
+Darwin*)
+    DETECT_OS="macos"
+    ;;
+Linux*)
+    DETECT_OS="linux"
+    ;;
+CYGWIN* | MINGW* | MSYS*)
+    DETECT_OS="windows"
+    ;;
+esac
+
+echo "Hệ điều hành được phát hiện: $DETECT_OS"
+
 # Kiểm tra thư mục App
 if [ ! -d "App" ]; then
     echo "Không tìm thấy thư mục App. Vui lòng kiểm tra lại cấu trúc dự án!"
@@ -16,28 +32,88 @@ if [ ! -f "requirements.txt" ]; then
     echo "⚠️ Cảnh báo: Không tìm thấy file requirements.txt. Sẽ sử dụng danh sách thư viện mặc định."
 fi
 
-# Kiểm tra và cài đặt các thư viện hệ thống cần thiết
+# Kiểm tra và cài đặt các thư viện hệ thống cần thiết dựa trên OS
 echo "Kiểm tra các thư viện hệ thống..."
-if ! command -v brew &>/dev/null; then
-    echo "Homebrew không được cài đặt. Vui lòng cài đặt Homebrew trước."
-    echo "Xem hướng dẫn tại: https://brew.sh"
-    exit 1
-fi
 
-# Cài đặt python-setuptools nếu chưa có
-if ! brew list python-setuptools &>/dev/null; then
-    echo "Cài đặt python-setuptools..."
-    brew install python-setuptools
-fi
+install_system_dependencies() {
+    case "$DETECT_OS" in
+    macos)
+        if ! command -v brew &>/dev/null; then
+            echo "Homebrew không được cài đặt. Vui lòng cài đặt Homebrew trước."
+            echo "Xem hướng dẫn tại: https://brew.sh"
+            exit 1
+        fi
+        # Cài đặt python-setuptools nếu chưa có
+        if ! brew list python-setuptools &>/dev/null; then
+            echo "Cài đặt python-setuptools..."
+            brew install python-setuptools
+        fi
+        ;;
+    linux)
+        if command -v apt-get &>/dev/null; then
+            echo "Kiểm tra và cài đặt các thư viện trên hệ thống Debian/Ubuntu..."
+            sudo apt-get update
+            sudo apt-get install -y python3-setuptools python3-pip python3-venv
+        elif command -v yum &>/dev/null; then
+            echo "Kiểm tra và cài đặt các thư viện trên hệ thống CentOS/RHEL/Fedora..."
+            sudo yum install -y python3-setuptools python3-pip python3-virtualenv
+        else
+            echo "Không thể xác định trình quản lý gói trên Linux. Vui lòng cài đặt python3-setuptools, python3-pip, python3-venv thủ công."
+        fi
+        ;;
+    windows)
+        echo "Đang chạy trên Windows thông qua MSYS/MINGW/Cygwin..."
+        echo "Vui lòng đảm bảo rằng Python và pip đã được cài đặt."
+        ;;
+    *)
+        echo "Hệ điều hành không được hỗ trợ: $DETECT_OS"
+        echo "Vui lòng cài đặt Python, pip, và setuptools thủ công."
+        ;;
+    esac
+}
+
+install_system_dependencies
+
+# Kích hoạt môi trường ảo dựa trên hệ điều hành
+activate_venv() {
+    case "$DETECT_OS" in
+    macos | linux)
+        source venv/bin/activate
+        ;;
+    windows)
+        # Trong Windows với MSYS/MINGW/Cygwin, sử dụng cú pháp khác
+        source venv/Scripts/activate
+        ;;
+    *)
+        echo "Không thể kích hoạt môi trường ảo trên hệ điều hành không xác định"
+        exit 1
+        ;;
+    esac
+}
+
+create_venv() {
+    case "$DETECT_OS" in
+    macos | linux)
+        python3 -m venv venv
+        ;;
+    windows)
+        python -m venv venv
+        ;;
+    *)
+        echo "Không thể tạo môi trường ảo trên hệ điều hành không xác định"
+        exit 1
+        ;;
+    esac
+}
 
 # Kích hoạt môi trường ảo nếu tồn tại
 if [ -d "venv" ]; then
     echo "🚀 Kích hoạt môi trường ảo..."
-    source venv/bin/activate
+    activate_venv
 else
     echo "Tạo môi trường ảo mới..."
-    python3 -m venv venv
-    source venv/bin/activate
+    create_venv
+    activate_venv
 
     echo "Cài đặt các thư viện cần thiết..."
     pip install --upgrade pip setuptools wheel
@@ -74,14 +150,29 @@ run_python_file() {
     file_name=$1
     echo "===== ĐANG THỰC THI $file_name ====="
 
+    # Đường dẫn Python dựa trên hệ điều hành
+    get_python_path() {
+        case "$DETECT_OS" in
+        macos | linux)
+            echo "./venv/bin/python"
+            ;;
+        windows)
+            echo "./venv/Scripts/python"
+            ;;
+        *)
+            echo "python" # Sử dụng Python hệ thống nếu không xác định được OS
+            ;;
+        esac
+    }
+
     # Đảm bảo môi trường ảo được kích hoạt
     if [ -d "venv" ]; then
         # Sử dụng Python từ môi trường ảo
-        ./venv/bin/python "App/$file_name"
+        $(get_python_path) "App/$file_name"
     else
         echo "Môi trường ảo chưa được tạo. Đang tạo môi trường..."
-        python3 -m venv venv
-        source venv/bin/activate
+        create_venv
+        activate_venv
         pip install --upgrade pip setuptools wheel
 
         # Cài đặt các thư viện từ requirements.txt
@@ -93,7 +184,7 @@ run_python_file() {
             pip install selenium webdriver-manager pandas numpy pyspark matplotlib seaborn streamlit pyngrok ngrok folium plotly
         fi
 
-        ./venv/bin/python "App/$file_name"
+        $(get_python_path) "App/$file_name"
     fi
 
     # Kiểm tra lỗi
@@ -111,11 +202,40 @@ run_streamlit_with_ngrok() {
     echo "Bạn có muốn sử dụng ngrok để tạo URL public không? (y/n)"
     read use_ngrok
 
+    # Lấy đường dẫn Python và Streamlit dựa trên hệ điều hành
+    get_python_path() {
+        case "$DETECT_OS" in
+        macos | linux)
+            echo "./venv/bin/python"
+            ;;
+        windows)
+            echo "./venv/Scripts/python"
+            ;;
+        *)
+            echo "python" # Sử dụng Python hệ thống nếu không xác định được OS
+            ;;
+        esac
+    }
+
+    get_streamlit_path() {
+        case "$DETECT_OS" in
+        macos | linux)
+            echo "./venv/bin/streamlit"
+            ;;
+        windows)
+            echo "./venv/Scripts/streamlit"
+            ;;
+        *)
+            echo "streamlit" # Sử dụng streamlit hệ thống nếu không xác định được OS
+            ;;
+        esac
+    }
+
     # Đảm bảo môi trường ảo được kích hoạt
     if [ ! -d "venv" ]; then
         echo "Môi trường ảo chưa được tạo. Đang tạo môi trường..."
-        python3 -m venv venv
-        source venv/bin/activate
+        create_venv
+        activate_venv
         pip install --upgrade pip setuptools wheel
 
         # Cài đặt từ requirements.txt
@@ -134,6 +254,11 @@ run_streamlit_with_ngrok() {
 
         echo "Cấu hình ngrok và khởi chạy Streamlit..."
 
+        # Lấy đường dẫn đầy đủ tới streamlit trong môi trường ảo
+        STREAMLIT_PATH=$(get_streamlit_path)
+        # Ghi ra console để debug
+        echo "Sử dụng Streamlit tại: $STREAMLIT_PATH"
+
         # Tạo file python tạm để khởi chạy ngrok
         cat >run_streamlit_ngrok.py <<EOF
 import os
@@ -146,7 +271,8 @@ ngrok_token = "$ngrok_token"
 ngrok.set_auth_token(ngrok_token)
 
 # Khởi chạy Streamlit trong tiến trình con
-streamlit_process = subprocess.Popen(["streamlit", "run", "App/6_streamlit_app.py"])
+# Sử dụng đường dẫn đầy đủ tới streamlit thay vì chỉ 'streamlit'
+streamlit_process = subprocess.Popen(["$STREAMLIT_PATH", "run", "App/6_streamlit_app.py"])
 
 # Khởi tạo tunnel
 http_tunnel = ngrok.connect(addr="8501", proto="http", bind_tls=True)
@@ -167,13 +293,13 @@ except KeyboardInterrupt:
 EOF
 
         # Chạy file python tạm với môi trường ảo
-        ./venv/bin/python run_streamlit_ngrok.py
+        $(get_python_path) run_streamlit_ngrok.py
 
         # Xóa file tạm sau khi chạy
         rm run_streamlit_ngrok.py
     else
         echo "Khởi chạy Streamlit trên localhost:8501..."
-        ./venv/bin/streamlit run App/6_streamlit_app.py
+        $(get_streamlit_path) run App/6_streamlit_app.py
     fi
 }
 
