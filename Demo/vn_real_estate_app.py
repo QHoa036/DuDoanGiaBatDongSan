@@ -87,16 +87,16 @@ def load_data(file_path=None):
     if file_path is None:
         # Đường dẫn tương đối từ thư mục gốc của dự án
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(base_dir, 'data', 'Final Data Cleaned.csv')
+        file_path = os.path.join(base_dir, 'data', 'final_data_cleaned.csv')
         
         # Kiểm tra xem file có tồn tại không
         if not os.path.exists(file_path):
             # Thử tìm file ở vị trí khác
             project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             alternate_paths = [
-                os.path.join(project_root, 'Data', 'Demo', 'Final Data Cleaned.csv'),
-                os.path.join(project_root, 'Data', 'Final Data Cleaned.csv'),
-                os.path.join(project_root, 'Demo', 'data', 'Final Data Cleaned.csv')
+                os.path.join(project_root, 'Data', 'Demo', 'final_data_cleaned.csv'),
+                os.path.join(project_root, 'Data', 'final_data_cleaned.csv'),
+                os.path.join(project_root, 'Demo', 'data', 'final_data_cleaned.csv')
             ]
             
             for alt_path in alternate_paths:

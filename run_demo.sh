@@ -214,12 +214,48 @@ if [[ $use_ngrok == "y" || $use_ngrok == "Y" ]]; then
 
     echo "⚙️ Cấu hình ngrok và khởi chạy Streamlit..."
 
-    # Lấy đường dẫn Python trong môi trường ảo
-    PYTHON_PATH=$(get_python_path)
-    echo "Sử dụng Python tại: $PYTHON_PATH"
+    # Lấy đường dẫn đầy đủ tới streamlit trong môi trường ảo
+    STREAMLIT_PATH=$(get_streamlit_path)
+    # Ghi ra console để debug
+    echo "Sử dụng Streamlit tại: $STREAMLIT_PATH"
 
-    # Chạy script ngrok từ thư mục Demo
-    $PYTHON_PATH Demo/run_with_ngrok.py
+    # Tạo file Python tạm thời để chạy ngrok
+    cat >run_with_ngrok.py <<EOF
+import subprocess
+import time
+from pyngrok import ngrok
+
+# Thiết lập ngrok
+ngrok_token = "$ngrok_token"
+ngrok.set_auth_token(ngrok_token)
+
+# Khởi chạy Streamlit trong tiến trình con với file từ thư mục Demo
+# Sử dụng đường dẫn đầy đủ tới streamlit thay vì chỉ 'streamlit'
+streamlit_process = subprocess.Popen(["$STREAMLIT_PATH", "run", "Demo/vn_real_estate_app.py"])
+
+# Tạo tunnel HTTP đến cổng Streamlit
+http_tunnel = ngrok.connect(addr="8501", proto="http", bind_tls=True)
+print("\n" + "="*60)
+print(f"🌐 URL NGROK PUBLIC: {http_tunnel.public_url}")
+print("🔗 Chia sẻ URL này để cho phép người khác truy cập ứng dụng của bạn")
+print("="*60 + "\n")
+
+try:
+    # Giữ script chạy
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    # Dọn dẹp khi người dùng nhấn Ctrl+C
+    print("\n🛑 Đang dừng ứng dụng...")
+    ngrok.kill()
+    streamlit_process.terminate()
+EOF
+
+    # Chạy script Python với ngrok
+    $(get_python_path) run_with_ngrok.py
+
+    # Xóa file tạm thời sau khi chạy
+    rm run_with_ngrok.py
 
 else
     echo "💻 Khởi chạy Streamlit trên localhost:8501..."
