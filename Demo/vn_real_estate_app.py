@@ -189,7 +189,69 @@ def train_model(data):
     
     # Kiểm tra nếu data_spark là None (khi Spark không khả dụng)
     if data_spark is None:
-        return None
+        # Thiết lập giá trị metrics mặc định
+        st.session_state.model_metrics = {
+            "rmse": 0.0,
+            "r2": 0.0
+        }
+        
+        # Sử dụng fallback mode với scikit-learn
+        try:
+            # Kiểm tra xem scikit-learn có sẵn không
+            sklearn_available = False
+            try:
+                import sklearn
+                sklearn_available = True
+            except ImportError:
+                st.warning("🔔 Thư viện scikit-learn không có sẵn. Sử dụng chế độ dự phòng đơn giản hơn.")
+                st.info("📚 Cài đặt scikit-learn để có các metrics chính xác hơn: pip install scikit-learn")
+            
+            if sklearn_available:
+                from sklearn.model_selection import train_test_split
+                from sklearn.ensemble import GradientBoostingRegressor
+                from sklearn.metrics import r2_score, mean_squared_error
+                import numpy as np
+                
+                # Chuẩn bị dữ liệu cho scikit-learn
+                X = data.drop(['price_per_m2', 'price_million_vnd'], axis=1, errors='ignore')
+                y = data['price_per_m2']
+                
+                # Tạo bộ lọc cho các cột số (loại bỏ cột object/categorical)
+                numeric_cols = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
+                X = X[numeric_cols]  # Chỉ sử dụng các cột số
+                
+                # Chia dữ liệu train/test
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                
+                # Huấn luyện mô hình
+                fallback_model = GradientBoostingRegressor(n_estimators=100, random_state=42)
+                fallback_model.fit(X_train, y_train)
+                
+                # Đánh giá mô hình
+                y_pred = fallback_model.predict(X_test)
+                r2 = r2_score(y_test, y_pred)
+                rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+                
+                # Lưu metrics vào session state
+                st.session_state.model_metrics = {
+                    "rmse": rmse,
+                    "r2": r2
+                }
+                
+                # Lưu thêm thông tin về fallback mode
+                st.session_state.using_fallback = True
+                st.session_state.fallback_features = numeric_cols
+                
+                return fallback_model
+            else:
+                # Sử dụng chế độ dự phòng rất đơn giản khi không có scikit-learn
+                st.session_state.using_fallback = True
+                st.warning("❗ Không thể huấn luyện mô hình nâng cao. Sử dụng phương pháp tính trung bình đơn giản.")
+                return None
+        except Exception as e:
+            st.error(f"Lỗi khi huấn luyện mô hình dự phòng: {e}")
+            # Đã thiết lập giá trị mặc định cho metrics ở trên
+            return None
         
     # Định nghĩa các cột để sử dụng trong mô hình
     area_column = FEATURE_COLUMNS['area']  # 'area (m2)'
@@ -252,49 +314,102 @@ def train_model(data):
             "rmse": rmse,
             "r2": r2
         }
+        
+        # Đánh dấu đang sử dụng Spark
+        st.session_state.using_fallback = False
 
         return model
     except Exception as e:
         st.error(f"Lỗi khi huấn luyện mô hình: {e}")
-        raise e
+        # Thiết lập giá trị mặc định cho metrics
+        st.session_state.model_metrics = {
+            "rmse": 0.0,
+            "r2": 0.0
+        }
+        return None
 
 # MARK: - Dự đoán giá dựa trên giá trung bình (dự phòng)
 def predict_price_fallback(input_data, data):
     """Phương pháp dự phòng cho việc dự đoán giá khi Spark không khả dụng."""
+    # Hiển thị thông báo cảnh báo
+    st.warning("Spark không khả dụng. Đang sử dụng phương pháp dự phòng để dự đoán giá.")
+    
+    # Kiểm tra xem có mô hình dự phòng được huấn luyện chưa
+    if 'fallback_model' in st.session_state and st.session_state.fallback_model is not None:
+        try:
+            # Chuẩn bị dữ liệu đầu vào cho mô hình fallback
+            features = st.session_state.fallback_features
+            input_features = {}
+            
+            # Chuyển đổi dữ liệu đầu vào sang định dạng phù hợp với mô hình
+            for feature in features:
+                if feature in input_data:
+                    input_features[feature] = input_data[feature]
+                elif feature == 'area (m2)' and 'area' in input_data:
+                    input_features[feature] = input_data['area']
+                elif feature == 'street (m)' and 'street' in input_data:
+                    input_features[feature] = input_data['street']
+                else:
+                    # Nếu không có giá trị, dùng giá trị trung bình từ tập dữ liệu
+                    if feature in data.columns:
+                        input_features[feature] = data[feature].mean()
+                    else:
+                        input_features[feature] = 0
+            
+            # Tạo DataFrame từ input_features
+            import pandas as pd
+            input_df = pd.DataFrame([input_features])
+            
+            # Dự đoán giá sử dụng mô hình dự phòng
+            predicted_price = st.session_state.fallback_model.predict(input_df[features])[0]
+            return predicted_price
+        except Exception as e:
+            st.error(f"Lỗi khi dự đoán với mô hình dự phòng: {e}")
+            # Fallback to basic method if model prediction fails
+            pass
+    
+    # Thêm filter theo loại bất động sản và vị trí
+    filtered_data = data.copy()
+    
+    # Lọc dữ liệu theo category (loại bất động sản) nếu có
+    if 'category' in input_data and 'category' in filtered_data.columns:
+        filtered_data = filtered_data[filtered_data['category'] == input_data['category']]
+    
+    # Lọc dữ liệu theo district (quận/huyện) nếu có
+    if 'district' in input_data and 'district' in filtered_data.columns:
+        filtered_data = filtered_data[filtered_data['district'] == input_data['district']]
+        
+    # Lọc dữ liệu theo city_province (tỉnh/thành phố) nếu có
+    if 'city_province' in input_data and 'city_province' in filtered_data.columns:
+        filtered_data = filtered_data[filtered_data['city_province'] == input_data['city_province']]
+        
     try:
-        # Lọc dữ liệu dựa trên vị trí (tỉnh/thành phố và quận/huyện)
-        city = input_data.get("city_province")
-        district = input_data.get("district")
-        category = input_data.get("category")
-        area = input_data.get("area (m2)")
-
-        # Lọc dữ liệu tương tự
-        similar_properties = data[
-            (data["city_province"] == city) &
-            (data["district"] == district) &
-            (data["category"] == category) &
-            (data["area_m2"] > area * 0.7) &
-            (data["area_m2"] < area * 1.3)
-        ]
-
-        # Nếu không có dữ liệu tương tự, mở rộng phạm vi tìm kiếm
-        if len(similar_properties) < 3:
-            similar_properties = data[
-                (data["city_province"] == city) &
-                (data["district"] == district)
-            ]
-
-        # Nếu vẫn không có, lấy trung bình toàn thành phố
-        if len(similar_properties) < 3:
-            similar_properties = data[(data["city_province"] == city)]
-
-        # Tính giá trung bình
-        if len(similar_properties) > 0:
-            avg_price = similar_properties["price_per_m2"].mean()
-            return avg_price
+        # Tính giá dựa trên trung bình và độ lệch chuẩn của khu vực tương ứng
+        if not filtered_data.empty:
+            # Tính trung bình và độ lệch chuẩn của giá
+            mean_price = filtered_data['price_per_m2'].mean()
+            std_price = filtered_data['price_per_m2'].std()
+            
+            # Áp dụng các hệ số điều chỉnh cho từng đặc trưng
+            adjusted_price = mean_price
+            
+            # Điều chỉnh theo diện tích (area)
+            if 'area (m2)' in input_data and 'area (m2)' in filtered_data.columns:
+                area_mean = filtered_data['area (m2)'].mean()
+                area_factor = input_data['area (m2)'] / area_mean if area_mean > 0 else 1
+                # Hệ số giảm khi diện tích lớn
+                adjusted_price *= (0.9 + 0.2 * (1 / area_factor)) if area_factor > 1 else 1
+            
+            # Điều chỉnh theo số phòng ngủ
+            if 'bedroom_num' in input_data and 'bedroom_num' in filtered_data.columns:
+                bedroom_mean = filtered_data['bedroom_num'].mean()
+                bedroom_factor = input_data['bedroom_num'] / bedroom_mean if bedroom_mean > 0 else 1
+                adjusted_price *= (0.95 + 0.1 * bedroom_factor)
+            
+            return adjusted_price
         else:
-            # Mặc định nếu không có dữ liệu tương tự
-            return data["price_per_m2"].mean()
+            # Nếu không có dữ liệu phù hợp, trả về giá trung bình tổng thể
+            return data['price_per_m2'].mean()
     except Exception as e:
         st.error(f"Lỗi khi dự đoán giá dự phòng: {e}")
         return 30000000  # Giá mặc định nếu có lỗi
