@@ -1,10 +1,10 @@
 # Dự Đoán Giá Bất Động Sản Việt Nam
 
-Ứng dụng web dựa trên Python notebook để dự đoán giá bất động sản tại Việt Nam sử dụng bộ dữ liệu tự thu thập, Apache Spark, PySpark và Streamlit.
+Ứng dụng web dựa trên Python để dự đoán giá bất động sản tại Việt Nam sử dụng bộ dữ liệu tự thu thập, Apache Spark, PySpark và Streamlit.
 
 ![Cờ Việt Nam](https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Flag_of_Vietnam.svg/1200px-Flag_of_Vietnam.svg.png)
 
-## 📋 Tổng Quan Dự Án
+## Tổng Quan Dự Án
 
 Dự án này triển khai một pipeline hoàn chỉnh về học máy để dự đoán giá bất động sản tại Việt Nam:
 
@@ -12,36 +12,41 @@ Dự án này triển khai một pipeline hoàn chỉnh về học máy để d�
 - **Xử Lý Dữ Liệu**: Xử lý dữ liệu lớn với Apache Spark (PySpark)
 - **Học Máy**: Huấn luyện mô hình cây tăng cường độ dốc (Gradient Boosted Trees)
 - **Ứng Dụng Web**: Giao diện người dùng tương tác xây dựng bằng Streamlit
-- **Triển Khai**: Triển khai cục bộ và đám mây sử dụng ngrok
+- **Triển Khai Đa Nền Tảng**: Hỗ trợ macOS, Linux và Windows
+- **Công Khai Ứng Dụng**: Tích hợp ngrok để tạo URL public để chia sẻ
 
-## 🛠️ Công Nghệ Sử Dụng
+## Công Nghệ Sử Dụng
 
 - **Python** - Ngôn ngữ lập trình chính
-- **Jupyter Notebook** - Môi trường phát triển
-- **PySpark** - Xử lý dữ liệu lớn
-- **Streamlit** - Framework ứng dụng web
-- **Selenium** - Web scraping
-- **Giao Diện Hiện Đại** - TailwindCSS, thiết kế responsive
-- **Ngrok** - Bảo mật tunnel để triển khai đám mây
+- **PySpark** - Xử lý dữ liệu lớn và huấn luyện mô hình ML
+- **Streamlit** - Framework giao diện người dùng đồ họa
+- **Ngrok** - Công cụ tạo URL public thông qua tunnel an toàn
+- **CSS & HTML** - Giao diện hiện đại và responsive
+- **Shell Scripting** - Tự động hóa quy trình triển khai
 
-## 📂 Cấu Trúc Dự Án
+## Cấu Trúc Dự Án
 
 ```
 Vietnam_Real_Estate_Price_Prediction/
-├── App/                             # Các thành phần chính của ứng dụng
-│   ├── 1_fetch_real_estate.py       # Thu thập dữ liệu với Selenium
-│   ├── 2_property_details.py        # Trích xuất thông tin chi tiết bất động sản
-│   ├── 3_preprocess_data.py         # Làm sạch và tiền xử lý dữ liệu với PySpark
-│   ├── 4_HDFS_storage.py            # Tích hợp HDFS cho lưu trữ dữ liệu lớn
-│   ├── 5_model_training.py          # Huấn luyện mô hình ML với PySpark ML
-│   ├── 6_streamlit_app.py           # Ứng dụng web Streamlit
-│   └── 7_visualize_data.py          # Các thành phần trực quan hóa dữ liệu
-├── Demo/                            # Ứng dụng demo
-│   └── vn_real_estate_app.py        # Ứng dụng demo tích hợp hoàn chỉnh
-├── Data/                            # Thư mục dữ liệu
-│   └── Final Data Cleaned.csv       # Bộ dữ liệu đã xử lý
-├── References/                      # Tài liệu tham khảo
-└── Docs/                            # Các file tài liệu
+├── App/                         # Thư mục chứa ứng dụng chính
+│   ├── 1_fetch_real_estate.py   # Thu thập dữ liệu với Selenium
+│   ├── 2_property_details.py    # Trích xuất thông tin chi tiết bất động sản
+│   ├── 3_preprocess_data.py     # Làm sạch và tiền xử lý dữ liệu với PySpark
+│   ├── 4_HDFS_storage.py        # Tích hợp HDFS cho lưu trữ dữ liệu lớn
+│   ├── 5_model_training.py      # Huấn luyện mô hình ML với PySpark ML
+│   ├── 6_streamlit_app.py       # Ứng dụng web Streamlit
+│   └── 7_visualize_data.py      # Các thành phần trực quan hóa dữ liệu
+├── Demo/                         # Thư mục chứa phiên bản demo
+│   ├── data/                    # Dữ liệu mẫu cho phiên bản demo
+│   ├── styles/                  # CSS và các tài nguyên giao diện
+│   ├── utils/                   # Các tiện ích hỗ trợ (Spark, logging)
+│   └── vn_real_estate_app.py    # Ứng dụng Streamlit demo
+├── References/                   # Tài liệu tham khảo
+├── Docs/                         # Các file tài liệu
+├── manage_token.py               # Tiện ích quản lý token ngrok
+├── run_demo.sh                   # Script chạy phiên bản demo
+├── run_app.sh                    # Script chạy ứng dụng đầy đủ
+└── run_with_ngrok.py             # Công cụ tạo URL public với ngrok
 ```
 
 ## 🔄 Quy Trình Xử Lý Dữ Liệu
@@ -211,6 +216,35 @@ Giao diện được chia thành bốn phần chính:
 2. **Dự Đoán Giá** - Form nhập thông tin bất động sản
 3. **Khám Phá Dữ Liệu** - Trực quan hóa tương tác và phân tích
 4. **Giới Thiệu** - Thông tin dự án và chi tiết kỹ thuật
+
+## 🔺 Cải Tiến Mới Nhất
+
+### Tích Hợp Ngrok Đa Nền Tảng
+
+Hệ thống đã được cải tiến để hỗ trợ đa nền tảng và quản lý ngrok tốt hơn:
+
+- **Quản Lý Token An Toàn**: Tạo module `manage_token.py` để quản lý token ngrok an toàn thông qua file `.env.local`
+- **Tách Lọc Riêng**: Module `run_ngrok.py` riêng biệt cho tích hợp ngrok, giúp dễ bảo trì và cập nhật
+- **Tương Thích Đa Nền Tảng**: Các script được cập nhật để hoạt động trên macOS, Linux và Windows (qua Git Bash)
+- **Phát Hiện HĐH Tự Động**: Tự động phát hiện hệ điều hành và sử dụng đường dẫn thư mục chính xác
+- **Xử Lý Lỗi Nâng Cao**: Cải thiện xử lý tín hiệu và dọn dẹp tài nguyên khi kết thúc
+
+### Tối Ưu Hóa PySpark
+
+Đã triển khai các cải tiến để giảm thiểu cảnh báo không mong muốn và cải thiện trải nghiệm người dùng:
+
+- **Module Tiện Ích Spark**: Tạo module `utils/spark_utils.py` để tập trung các cấu hình và giảm logging
+- **Giảm Cảnh Báo Hadoop**: Đặc biệt giải quyết vấn đề "Unable to load native-hadoop library"
+- **Tối Ưu Hóa Bộ Nhớ**: Cấu hình bộ nhớ tốt hơn cho PySpark
+- **Các Tùy Chọn Bổ Sung**: Thêm cấu hình chi tiết cho SparkSession để tăng hiệu suất
+
+### Cải Tiến Đa Nền Tảng
+
+Các script chạy hỗ trợ tốt trên nhiều hệ điều hành:
+
+- **macOS & Linux**: Sử dụng đường dẫn `venv/bin` cho các công cụ Python
+- **Windows**: Sử dụng đường dẫn `venv/Scripts` được phát hiện tự động
+- **Cài đặt Thông Minh**: Tự động cài đặt các phụ thuộc thích hợp cho từng nền tảng
 
 ## 🌐 Triển Khai
 

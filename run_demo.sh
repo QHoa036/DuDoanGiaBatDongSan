@@ -5,19 +5,22 @@
 
 echo "===== KHỞI CHẠY ỨNG DỤNG DỰ ĐOÁN GIÁ BẤT ĐỘNG SẢN VIỆT NAM ====="
 
-# Phát hiện hệ điều hành
+# Phát hiện hệ điều hành với cách xử lý tốt hơn
 DETECT_OS="unknown"
-case "$(uname -s)" in
-Darwin*)
+if [[ "$(uname -s)" == "Darwin"* ]]; then
     DETECT_OS="macos"
-    ;;
-Linux*)
+elif [[ "$(uname -s)" == "Linux"* ]]; then
     DETECT_OS="linux"
-    ;;
-CYGWIN* | MINGW* | MSYS*)
+elif [[ "$(uname -s)" == "CYGWIN"* || "$(uname -s)" == "MINGW"* || "$(uname -s)" == "MSYS"* ]]; then
     DETECT_OS="windows"
-    ;;
-esac
+    # Kiểm tra xem có đang chạy trong Git Bash không
+    if command -v git --version >/dev/null 2>&1; then
+        echo "[OK] Đang chạy trong Git Bash (khuyến nghị cho Windows)"
+    else
+        echo "[WARNING] Khuyến nghị: Trên Windows, nên sử dụng Git Bash để có trải nghiệm tốt nhất"
+        echo "   Tải Git Bash tại: https://git-scm.com/downloads"
+    fi
+fi
 
 echo "Hệ điều hành được phát hiện: $DETECT_OS"
 
@@ -29,7 +32,7 @@ fi
 
 # Kiểm tra file requirements.txt
 if [ ! -f "requirements.txt" ]; then
-    echo "⚠️ Cảnh báo: Không tìm thấy file requirements.txt. Sẽ sử dụng danh sách thư viện mặc định."
+    echo "[WARNING] Cảnh báo: Không tìm thấy file requirements.txt. Sẽ sử dụng danh sách thư viện mặc định."
 fi
 
 # Kiểm tra và cài đặt các thư viện hệ thống cần thiết dựa trên OS
@@ -62,8 +65,13 @@ install_system_dependencies() {
         fi
         ;;
     windows)
-        echo "Đang chạy trên Windows thông qua MSYS/MINGW/Cygwin..."
-        echo "Vui lòng đảm bảo rằng Python và pip đã được cài đặt."
+        echo "Đang chạy trên Windows thông qua Git Bash/MSYS/MINGW/Cygwin..."
+        echo "Kiểm tra Python và pip..."
+        if ! command -v python --version >/dev/null 2>&1 && ! command -v python3 --version >/dev/null 2>&1; then
+            echo "[ERROR] Python không tìm thấy. Vui lòng cài đặt Python từ https://www.python.org/downloads/"
+            echo "[WARNING] Lưu ý: Đảm bảo đã chọn 'Add Python to PATH' trong quá trình cài đặt"
+            exit 1
+        fi
         ;;
     *)
         echo "Hệ điều hành không được hỗ trợ: $DETECT_OS"
@@ -76,39 +84,83 @@ install_system_dependencies
 
 # Kích hoạt môi trường ảo dựa trên hệ điều hành
 activate_venv() {
+    # Kiểm tra sự tồn tại của thư mục venv
+    if [ ! -d "venv" ]; then
+        echo "[ERROR] Thư mục venv không tồn tại. Cần tạo môi trường ảo trước."
+        return 1
+    fi
+
     case "$DETECT_OS" in
     macos | linux)
-        source venv/bin/activate
+        if [ -f "venv/bin/activate" ]; then
+            source venv/bin/activate
+            return 0
+        else
+            echo "[ERROR] File kích hoạt venv không tìm thấy tại venv/bin/activate"
+            return 1
+        fi
         ;;
     windows)
-        # Trong Windows với MSYS/MINGW/Cygwin, sử dụng cú pháp khác
-        source venv/Scripts/activate
+        # Trong Windows với Git Bash/MSYS/MINGW/Cygwin
+        if [ -f "venv/Scripts/activate" ]; then
+            source venv/Scripts/activate
+            return 0
+        else
+            echo "[ERROR] File kích hoạt venv không tìm thấy tại venv/Scripts/activate"
+            return 1
+        fi
         ;;
     *)
         echo "Không thể kích hoạt môi trường ảo trên hệ điều hành không xác định"
-        exit 1
+        return 1
         ;;
     esac
 }
 
 create_venv() {
+    echo "[TAO] Tạo môi trường ảo mới..."
     case "$DETECT_OS" in
     macos | linux)
-        python3 -m venv venv
+        if command -v python3 >/dev/null 2>&1; then
+            python3 -m venv venv
+        else
+            echo "[ERROR] Python3 không tìm thấy. Vui lòng cài đặt Python3."
+            exit 1
+        fi
         ;;
     windows)
-        python -m venv venv
+        # Thử python3 trước, nếu không có thì dùng python
+        if command -v python3 >/dev/null 2>&1; then
+            python3 -m venv venv
+        elif command -v python >/dev/null 2>&1; then
+            # Kiểm tra phiên bản Python
+            PY_VER=$(python -c "import sys; print(sys.version_info.major)")
+            if [ "$PY_VER" -lt 3 ]; then
+                echo "[ERROR] Cần Python 3.x, phiên bản hiện tại là Python $PY_VER.x"
+                exit 1
+            fi
+            python -m venv venv
+        else
+            echo "[ERROR] Python không tìm thấy. Vui lòng cài đặt Python 3.x."
+            exit 1
+        fi
         ;;
     *)
-        echo "Không thể tạo môi trường ảo trên hệ điều hành không xác định"
+        echo "[ERROR] Không thể tạo môi trường ảo trên hệ điều hành không xác định"
         exit 1
         ;;
     esac
+
+    # Kiểm tra xem venv đã được tạo thành công chưa
+    if [ ! -d "venv" ]; then
+        echo "[ERROR] Không thể tạo môi trường ảo. Vui lòng kiểm tra quyền truy cập thư mục."
+        exit 1
+    fi
 }
 
 # Kích hoạt môi trường ảo nếu tồn tại
 if [ -d "venv" ]; then
-    echo "🚀 Kích hoạt môi trường ảo..."
+    echo "Kích hoạt môi trường ảo..."
     activate_venv
 else
     echo "Tạo môi trường ảo mới..."
@@ -133,7 +185,7 @@ cd "$(dirname "$0")"
 
 # Đảm bảo thư mục Demo tồn tại
 if [ ! -d "Demo" ]; then
-    echo "❌ Không tìm thấy thư mục Demo. Vui lòng kiểm tra lại cấu trúc dự án."
+    echo "Không tìm thấy thư mục Demo. Vui lòng kiểm tra lại cấu trúc dự án."
     exit 1
 fi
 
@@ -166,99 +218,44 @@ get_streamlit_path() {
     esac
 }
 
-echo "🌐 Bạn muốn chạy ứng dụng với ngrok để tạo URL public không? (y/n)"
+echo "Bạn muốn chạy ứng dụng với ngrok để tạo URL public không? (y/n)"
 read use_ngrok
 
 if [[ $use_ngrok == "y" || $use_ngrok == "Y" ]]; then
-    # Kiểm tra xem file .env.local có tồn tại và có chứa NGROK_TOKEN
-    if [ -f ".env.local" ] && grep -q "NGROK_TOKEN=" ".env.local"; then
-        # Đọc token từ file .env.local
-        ngrok_token=$(grep "NGROK_TOKEN=" ".env.local" | cut -d'=' -f2)
+    # Đảm bảo Python scripts có quyền thực thi
+    chmod +x manage_token.py run_ngrok.py
 
-        # Kiểm tra xem token có giá trị hay không hoặc có phải là placeholder
-        if [ -z "$ngrok_token" ] || [ "$ngrok_token" = "<your_ngrok_token>" ]; then
-            echo "⚠️ Cần có ngrok token hợp lệ để tiếp tục."
-            echo "🔑 Vui lòng nhập ngrok authtoken của bạn (đăng ký tại ngrok.com):"
-            read -s ngrok_token
+    echo "[CONFIG] Kiểm tra và lấy ngrok token..."
 
-            # Kiểm tra nếu người dùng không nhập gì hoặc nhập placeholder
-            if [ -z "$ngrok_token" ] || [ "$ngrok_token" = "<your_ngrok_token>" ]; then
-                echo "❌ Bạn phải cung cấp ngrok token hợp lệ để sử dụng tính năng này!"
-                echo "🛑 Đang thoát chương trình..."
-                exit 1
-            fi
+    # Sử dụng utility Python để quản lý token - sẽ nhập và lưu token nếu cần
+    ngrok_token=$($(get_python_path) manage_token.py --prompt)
 
-            # Cập nhật file .env.local với token mới
-            sed -i '' "s/NGROK_TOKEN=.*/NGROK_TOKEN=$ngrok_token/" .env.local
-        else
-            echo "🔑 Đã tìm thấy ngrok token trong file .env.local"
-        fi
-    else
-        echo "🔑 Nhập ngrok authtoken của bạn (đăng ký tại ngrok.com):"
-        read -s ngrok_token
-
-        # Kiểm tra nếu người dùng không nhập gì hoặc nhập placeholder
-        if [ -z "$ngrok_token" ] || [ "$ngrok_token" = "<your_ngrok_token>" ]; then
-            echo "❌ Bạn phải cung cấp ngrok token hợp lệ để sử dụng tính năng này!"
-            echo "🛑 Đang thoát chương trình..."
-            exit 1
-        fi
-
-        # Lưu token vào file .env.local nếu file tồn tại
-        if [ -f ".env.local" ]; then
-            echo "NGROK_TOKEN=$ngrok_token" >>.env.local
-        else
-            echo "NGROK_TOKEN=$ngrok_token" >.env.local
-        fi
+    # Kiểm tra xem token có được trả về không
+    if [ -z "$ngrok_token" ]; then
+        echo "[ERROR] Không thể lấy ngrok token!"
+        echo "[WARNING] Đang thoát chương trình..."
+        exit 1
     fi
 
-    echo "⚙️ Cấu hình ngrok và khởi chạy Streamlit..."
+    echo "[CONFIG] Cấu hình ngrok và khởi chạy Streamlit..."
 
     # Lấy đường dẫn đầy đủ tới streamlit trong môi trường ảo
     STREAMLIT_PATH=$(get_streamlit_path)
-    # Ghi ra console để debug
     echo "Sử dụng Streamlit tại: $STREAMLIT_PATH"
 
-    # Tạo file Python tạm thời để chạy ngrok
-    cat >run_with_ngrok.py <<EOF
-import subprocess
-import time
-from pyngrok import ngrok
+    echo "[CONFIG] Khởi chạy ứng dụng với ngrok..."
 
-# Thiết lập ngrok
-ngrok_token = "$ngrok_token"
-ngrok.set_auth_token(ngrok_token)
+    # Đảm bảo run_ngrok.py có quyền thực thi
+    chmod +x run_ngrok.py
 
-# Khởi chạy Streamlit trong tiến trình con với file từ thư mục Demo
-# Sử dụng đường dẫn đầy đủ tới streamlit thay vì chỉ 'streamlit'
-streamlit_process = subprocess.Popen(["$STREAMLIT_PATH", "run", "Demo/vn_real_estate_app.py"])
-
-# Tạo tunnel HTTP đến cổng Streamlit
-http_tunnel = ngrok.connect(addr="8501", proto="http", bind_tls=True)
-print("\n" + "="*60)
-print(f"🌐 URL NGROK PUBLIC: {http_tunnel.public_url}")
-print("🔗 Chia sẻ URL này để cho phép người khác truy cập ứng dụng của bạn")
-print("="*60 + "\n")
-
-try:
-    # Giữ script chạy
-    while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    # Dọn dẹp khi người dùng nhấn Ctrl+C
-    print("\n🛑 Đang dừng ứng dụng...")
-    ngrok.kill()
-    streamlit_process.terminate()
-EOF
-
-    # Chạy script Python với ngrok
-    $(get_python_path) run_with_ngrok.py
-
-    # Xóa file tạm thời sau khi chạy
-    rm run_with_ngrok.py
+    # Chạy script Python độc lập với ngrok, truyền các tham số cần thiết
+    $(get_python_path) run_ngrok.py \
+        --streamlit_path "$STREAMLIT_PATH" \
+        --app_path "Demo/vn_real_estate_app.py" \
+        --ngrok_token "$ngrok_token"
 
 else
-    echo "💻 Khởi chạy Streamlit trên localhost:8501..."
+    echo "[LOCAL] Khởi chạy Streamlit trên localhost:8501..."
     $(get_streamlit_path) run Demo/vn_real_estate_app.py
 fi
 

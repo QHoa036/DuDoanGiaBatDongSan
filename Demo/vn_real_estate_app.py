@@ -7,14 +7,22 @@ import seaborn as sns
 from folium.plugins import HeatMap
 import plotly.express as px
 import plotly.graph_objects as go
-from pyspark.sql import SparkSession
+import os
+import time
+import logging
+from pyngrok import ngrok
+
+# Import các tiện ích Spark từ utils để giảm thiểu cảnh báo
+from utils.spark_utils import get_spark_session, configure_spark_logging
+
+# Import các thư viện Spark sau khi cấu hình logging
 from pyspark.ml.feature import VectorAssembler, StandardScaler
 from pyspark.ml.regression import GBTRegressor
 from pyspark.ml import Pipeline
 from pyspark.ml.evaluation import RegressionEvaluator
-import os
-import time
-from pyngrok import ngrok
+
+# Cấu hình logging để giảm thiểu cảnh báo
+configure_spark_logging()
 
 # MARK: - Global Variables
 # Khởi tạo biến toàn cục để lưu tên cột
@@ -62,21 +70,20 @@ if not load_css(css_path):
 
 # MARK: - Khởi tạo phiên Spark
 @st.cache_resource
-def get_spark_session():
-    """Khởi tạo và trả về một phiên Spark với xử lý lỗi."""
+def get_spark_session_cached():
+    """Phiên bản có cache của hàm khởi tạo Spark với cấu hình tối ưu và xử lý lỗi."""
     try:
-        spark = (
-            SparkSession.builder
-            .appName("VNRealEstatePricePrediction")
-            .config("spark.driver.memory", "2g")
-            .master("local[*]")
-            .getOrCreate()
+        # Sử dụng tiện ích Spark đã cấu hình để giảm thiểu cảnh báo
+        spark = get_spark_session(
+            app_name="VNRealEstatePricePrediction",
+            enable_hive=False
         )
-        # Kiểm tra kết nối
+
+        # Kiểm tra kết nối để đảm bảo Spark hoạt động
         spark.sparkContext.parallelize([1]).collect()
         return spark
     except Exception as e:
-        st.warning(f"Không thể khởi tạo Spark: {e}. Sẽ sử dụng phương pháp dự phòng.")
+        st.warning(f"[ERROR] Không thể khởi tạo Spark: {e}. Sẽ sử dụng phương pháp dự phòng.")
         return None
 
 # MARK: - Đọc dữ liệu
@@ -88,7 +95,7 @@ def load_data(file_path=None):
         # Đường dẫn tương đối từ thư mục gốc của dự án
         base_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(base_dir, 'data', 'final_data_cleaned.csv')
-        
+
         # Kiểm tra xem file có tồn tại không
         if not os.path.exists(file_path):
             # Thử tìm file ở vị trí khác
@@ -98,7 +105,7 @@ def load_data(file_path=None):
                 os.path.join(project_root, 'Data', 'final_data_cleaned.csv'),
                 os.path.join(project_root, 'Demo', 'data', 'final_data_cleaned.csv')
             ]
-            
+
             for alt_path in alternate_paths:
                 if os.path.exists(alt_path):
                     file_path = alt_path
@@ -160,15 +167,16 @@ def preprocess_data(data):
 @st.cache_resource
 def convert_to_spark(data):
     """Chuyển đổi DataFrame pandas sang DataFrame Spark."""
-    spark = get_spark_session()
-    return spark.createDataFrame(data)
+    spark = get_spark_session_cached()
+    if spark is not None:
+        return spark.createDataFrame(data)
 
 # MARK: - Huấn luyện mô hình
 @st.cache_resource
 def train_model(data):
     """Huấn luyện mô hình dự đoán giá bất động sản."""
     # Khởi tạo SparkSession
-    spark = get_spark_session()
+    spark = get_spark_session_cached()
 
     # For debugging - commented out
     # print(f"Các cột trong dữ liệu gốc trước khi chuyển đổi: {data.columns.tolist()}")
@@ -177,7 +185,7 @@ def train_model(data):
     if 'area (m2)' in data.columns and 'area_m2' not in data.columns:
         data['area_m2'] = data['area (m2)'].copy()
     if 'street (m)' in data.columns and 'street_width_m' not in data.columns:
-        data['street_width_m'] = data['street (m)'].copy()
+        data['street_wid_thm'] = data['street (m)'].copy()
 
     # Chuyển đổi sang Spark
     data_spark = convert_to_spark(data)
@@ -325,7 +333,7 @@ def predict_price(model, input_data):
             del data_copy['street_width_m']
 
         # Kiểm tra nếu Spark session tồn tại
-        spark = get_spark_session()
+        spark = get_spark_session_cached()
 
         if spark is not None:
             try:
@@ -1960,8 +1968,3 @@ elif app_mode == "Về dự án":
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-st.markdown("""
----
-© 2025 Vietnam Real Estate Price Prediction Project
-""")

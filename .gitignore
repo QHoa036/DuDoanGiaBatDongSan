@@ -87,7 +87,6 @@ ehthumbs.db
 Thumbs.db
 
 # Data files
-*.csv
 *.json
 *.xlsx
 *.pkl

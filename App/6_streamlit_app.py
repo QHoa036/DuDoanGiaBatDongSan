@@ -6,11 +6,23 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
 import os
-from pyspark.sql import SparkSession
+import logging
+import sys
+
+# Thêm đường dẫn thư mục cha vào sys.path để import module từ utils
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Import mục Spark từ thư viện utils (nằm trong thư mục Demo)
+from Demo.utils.spark_utils import get_spark_session, configure_spark_logging
+
+# Các import khác từ Spark
 from pyspark.ml import PipelineModel
 from pyspark.ml.regression import GBTRegressionModel
 from pyspark.sql.functions import col, struct, lit
 from pyspark.sql.types import DoubleType, StringType
+
+# Cấu hình mức độ log toàn cục
+configure_spark_logging()
 
 # MARK: - Cấu Hình Ứng Dụng
 # Cấu hình trang
@@ -22,15 +34,14 @@ st.set_page_config(
 )
 
 # MARK: - Hàm Tiện Ích
-# Hàm khởi tạo phiên Spark
+# Hàm khởi tạo phiên Spark đã được import từ utils.spark_utils
+# Đã được cấu hình để giảm thiểu cảnh báo
 @st.cache_resource
-def get_spark_session():
-    """Khởi tạo và trả về một phiên Spark."""
-    return (
-        SparkSession.builder
-        .appName("VietnamRealEstatePricePrediction")
-        .config("spark.driver.memory", "4g")
-        .getOrCreate()
+def get_spark_session_with_cache():
+    """Phiên bản có cache của hàm khởi tạo Spark cấu hình để giảm cảnh báo."""
+    return get_spark_session(
+        app_name="VietnamRealEstatePricePrediction",
+        enable_hive=False
     )
 
 # Hàm để tải mô hình PySpark ML đã lưu
@@ -49,7 +60,7 @@ def load_model(model_dir="real_estate_model"):
 @st.cache_data
 def load_data(file_path="processed_data/part-00000-*.csv"):
     """Đọc dữ liệu bất động sản đã xử lý."""
-    spark = get_spark_session()
+    spark = get_spark_session_with_cache()
     df = spark.read.option("header", True).csv(file_path)
     pandas_df = df.toPandas()
     return pandas_df
@@ -57,7 +68,7 @@ def load_data(file_path="processed_data/part-00000-*.csv"):
 # Hàm để dự đoán giá
 def predict_price(pipeline_model, regression_model, input_data):
     """Dự đoán giá sử dụng các mô hình đã được huấn luyện."""
-    spark = get_spark_session()
+    spark = get_spark_session_with_cache()
 
     # Chuyển đổi từ điển thành DataFrame Spark với một dòng
     input_df = spark.createDataFrame([input_data])

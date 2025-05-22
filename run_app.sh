@@ -29,7 +29,7 @@ fi
 
 # Kiểm tra file requirements.txt
 if [ ! -f "requirements.txt" ]; then
-    echo "⚠️ Cảnh báo: Không tìm thấy file requirements.txt. Sẽ sử dụng danh sách thư viện mặc định."
+    echo "[CANH BAO] Không tìm thấy file requirements.txt. Sẽ sử dụng danh sách thư viện mặc định."
 fi
 
 # Kiểm tra và cài đặt các thư viện hệ thống cần thiết dựa trên OS
@@ -108,7 +108,7 @@ create_venv() {
 
 # Kích hoạt môi trường ảo nếu tồn tại
 if [ -d "venv" ]; then
-    echo "🚀 Kích hoạt môi trường ảo..."
+    echo "[KHOI DONG] Kích hoạt môi trường ảo..."
     activate_venv
 else
     echo "Tạo môi trường ảo mới..."
@@ -249,7 +249,7 @@ run_streamlit_with_ngrok() {
     fi
 
     if [[ $use_ngrok == "y" || $use_ngrok == "Y" ]]; then
-                echo "Nhập ngrok authtoken của bạn (đăng ký tại ngrok.com):"
+        echo "Nhập ngrok authtoken của bạn (đăng ký tại ngrok.com):"
         read -s ngrok_token
 
         echo "Cấu hình ngrok và khởi chạy Streamlit..."
@@ -259,44 +259,107 @@ run_streamlit_with_ngrok() {
         # Ghi ra console để debug
         echo "Sử dụng Streamlit tại: $STREAMLIT_PATH"
 
-        # Tạo file python tạm để khởi chạy ngrok
-        cat >run_streamlit_ngrok.py <<EOF
+        # Tạo script ngrok riêng biệt để tránh vấn đề heredoc
+        echo "[CAU HINH] Tạo script ngrok..."
+
+        # Những biến cần truyền vào script Python
+        export NGROK_TOKEN="$ngrok_token"
+        export STREAMLIT_PATH="$STREAMLIT_PATH"
+
+        # Tạo file Python độc lập
+        cat >run_app_ngrok.py <<'PYTHONSCRIPT'
 import os
 import subprocess
 import time
+import sys
+import signal
 from pyngrok import ngrok
 
+# Xử lý tắt máy an toàn khi nhấn Ctrl+C
+def signal_handler(sig, frame):
+    print("\n[DUNG] Đang dừng ứng dụng...")
+    try:
+        ngrok.kill()
+        if 'streamlit_process' in globals() and streamlit_process.poll() is None:
+            streamlit_process.terminate()
+            streamlit_process.wait(timeout=5)
+    except Exception as e:
+        print(f"[LOI] Lỗi khi dọn dẹp: {e}")
+    sys.exit(0)
+
+# Đăng ký bộ xử lý tín hiệu
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+# Lấy các biến môi trường
+ngrok_token = os.environ.get('NGROK_TOKEN')
+streamlit_path = os.environ.get('STREAMLIT_PATH')
+
+# Kiểm tra các biến môi trường
+if not ngrok_token:
+    print("[LOI] Không tìm thấy NGROK_TOKEN trong biến môi trường")
+    sys.exit(1)
+
+if not streamlit_path:
+    print("[LOI] Không tìm thấy STREAMLIT_PATH trong biến môi trường")
+    streamlit_path = "streamlit"  # Dùng mặc định nếu không tìm thấy
+    print(f"[CANH BAO] Sử dụng streamlit path mặc định: {streamlit_path}")
+
 # Cấu hình ngrok
-ngrok_token = "$ngrok_token"
 ngrok.set_auth_token(ngrok_token)
 
 # Khởi chạy Streamlit trong tiến trình con
-# Sử dụng đường dẫn đầy đủ tới streamlit thay vì chỉ 'streamlit'
-streamlit_process = subprocess.Popen(["$STREAMLIT_PATH", "run", "App/6_streamlit_app.py"])
-
-# Khởi tạo tunnel
-http_tunnel = ngrok.connect(addr="8501", proto="http", bind_tls=True)
-print("\n" + "="*50)
-print(f"URL NGROK PUBLIC: {http_tunnel.public_url}")
-print("Chia sẻ URL này để cho phép người khác truy cập ứng dụng của bạn")
-print("="*50 + "\n")
+streamlit_process = subprocess.Popen([streamlit_path, "run", "App/6_streamlit_app.py"])
 
 try:
-    # Giữ script chạy
-    while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    # Dọn dẹp khi người dùng nhấn Ctrl+C
-    print("\nĐang dừng ứng dụng...")
-    ngrok.kill()
-    streamlit_process.terminate()
-EOF
+    # Tạo tunnel HTTP đến cổng Streamlit
+    http_tunnel = ngrok.connect(addr="8501", proto="http", bind_tls=True)
 
-        # Chạy file python tạm với môi trường ảo
-        $(get_python_path) run_streamlit_ngrok.py
+    # Hiển thị thông tin đường hầm
+    print("\n" + "="*60)
+    print(f"[URL] URL NGROK PUBLIC: {http_tunnel.public_url}")
+    print("[CHIA SE] Chia sẻ URL này để cho phép người khác truy cập ứng dụng của bạn")
+    print("[MEO] Đường dẫn này chỉ hoạt động khi script này đang chạy")
+    print("="*60 + "\n")
+
+    print("[DANG CHAY] Ứng dụng đang chạy... Nhấn Ctrl+C để dừng")
+
+    # Giữ script chạy và giám sát tiến trình
+    while True:
+        # Kiểm tra xem Streamlit còn đang chạy không
+        if streamlit_process.poll() is not None:
+            print("\n[CANH BAO] Streamlit đã dừng hoạt động không mong muốn! Đang dọn dẹp...")
+            ngrok.kill()
+            break
+        time.sleep(2)  # Tạm dừng 2 giây trước khi kiểm tra lại
+
+except KeyboardInterrupt:
+    # Đã được xử lý trong signal_handler
+    pass
+except Exception as e:
+    print(f"\n[LOI] Lỗi không mong muốn: {e}")
+finally:
+    # Đảm bảo dọn dẹp trong mọi trường hợp
+    print("\n[DON DEP] Đang dọn dẹp tài nguyên...")
+    try:
+        ngrok.kill()
+        if 'streamlit_process' in globals() and streamlit_process.poll() is None:
+            streamlit_process.terminate()
+            streamlit_process.wait(timeout=5)
+    except Exception as e:
+        print(f"[LOI] Lỗi khi dọn dẹp: {e}")
+PYTHONSCRIPT
+
+        # Cấp quyền thực thi cho script
+        chmod +x run_app_ngrok.py
+
+        # Chạy script Python tạo ngrok
+        $(get_python_path) run_app_ngrok.py
 
         # Xóa file tạm sau khi chạy
-        rm run_streamlit_ngrok.py
+        rm run_app_ngrok.py
+
+        # Đã xử lý xong trong phần trên
 
     else
         echo "Khởi chạy Streamlit trên localhost:8501..."
