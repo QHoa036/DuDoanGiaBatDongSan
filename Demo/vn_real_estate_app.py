@@ -9,7 +9,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import os
 import time
-import logging
 from pyngrok import ngrok
 
 # Import các tiện ích Spark từ utils để giảm thiểu cảnh báo
@@ -45,7 +44,6 @@ def load_css(css_file):
         with open(css_file, 'r', encoding='utf-8') as f:
             css = f.read()
         st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
-        print(f"Loaded CSS successfully from {css_file}")
         return True
     except Exception as e:
         print(f"Error loading CSS: {e}")
@@ -76,14 +74,13 @@ def get_spark_session_cached():
         # Sử dụng tiện ích Spark đã cấu hình để giảm thiểu cảnh báo
         spark = get_spark_session(
             app_name="VNRealEstatePricePrediction",
-            enable_hive=False
+            enable_hive=true
         )
 
         # Kiểm tra kết nối để đảm bảo Spark hoạt động
         spark.sparkContext.parallelize([1]).collect()
         return spark
     except Exception as e:
-        st.warning(f"[ERROR] Không thể khởi tạo Spark: {e}. Sẽ sử dụng phương pháp dự phòng.")
         return None
 
 # MARK: - Đọc dữ liệu
@@ -189,7 +186,11 @@ def train_model(data):
 
     # Chuyển đổi sang Spark
     data_spark = convert_to_spark(data)
-
+    
+    # Kiểm tra nếu data_spark là None (khi Spark không khả dụng)
+    if data_spark is None:
+        return None
+        
     # Định nghĩa các cột để sử dụng trong mô hình
     area_column = FEATURE_COLUMNS['area']  # 'area (m2)'
     street_column = FEATURE_COLUMNS['street']  # 'street (m)'
@@ -362,7 +363,6 @@ def predict_price(model, input_data):
                     return 30000000  # Giá mặc định nếu không có dữ liệu
         else:
             # Sử dụng phương pháp dự phòng nếu không có Spark
-            st.info("Sử dụng phương pháp dự phòng để dự đoán giá.")
             if 'data' in st.session_state:
                 return predict_price_fallback(input_data, st.session_state.data)
             else:

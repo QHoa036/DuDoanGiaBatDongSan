@@ -24,9 +24,9 @@ fi
 
 echo "Hệ điều hành được phát hiện: $DETECT_OS"
 
-# Kiểm tra thư mục App
-if [ ! -d "App" ]; then
-    echo "Không tìm thấy thư mục App. Vui lòng kiểm tra lại cấu trúc dự án!"
+# Kiểm tra thư mục Demo
+if [ ! -d "Demo" ]; then
+    echo "Không tìm thấy thư mục Demo. Vui lòng kiểm tra lại cấu trúc dự án!"
     exit 1
 fi
 

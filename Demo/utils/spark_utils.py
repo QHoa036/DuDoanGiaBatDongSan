@@ -75,25 +75,25 @@ def get_spark_session(app_name="Vietnam Real Estate Price Prediction", enable_hi
     # Tạo builder với các cấu hình chi tiết để giảm cảnh báo
     builder = SparkSession.builder \
         .appName(app_name) \
-        .config("spark.ui.showConsoleProgress", "false") \
-        .config("spark.executor.logs.rolling.enabled", "true") \
+        .config("spark.ui.showConsoleProgress", False) \
+        .config("spark.executor.logs.rolling.enabled", True) \
         .config("spark.executor.logs.rolling.maxSize", "10000000") \
         .config("spark.executor.logs.rolling.maxRetainedFiles", "5") \
-        .config("spark.sql.adaptive.enabled", "true") \
-        .config("spark.logConf", "false") \
+        .config("spark.sql.adaptive.enabled", True) \
+        .config("spark.logConf", False) \
         .config("spark.driver.extraJavaOptions", "-Dlog4j.logLevel=ERROR") \
         .config("spark.executor.extraJavaOptions", "-Dlog4j.logLevel=ERROR") \
-        .config("spark.master.ui.allowFrameAncestors", "true") \
+        .config("spark.master.ui.allowFrameAncestors", True) \
         .config("spark.hadoop.fs.defaultFS", "file:///") \
         .config("spark.sql.session.timeZone", "Asia/Ho_Chi_Minh") \
         .config("spark.driver.host", "127.0.0.1") \
         .config("spark.driver.bindAddress", "127.0.0.1")
 
     # Tắt SparkUI để giảm bớt logging
-    builder = builder.config("spark.ui.enabled", "false")
+    builder = builder.config("spark.ui.enabled", False)
 
     # Đặt mức độ log tối thiểu
-    builder = builder.config("spark.sql.hive.thriftServer.singleSession", "true")
+    builder = builder.config("spark.sql.hive.thriftServer.singleSession", True)
 
     # Bật hỗ trợ Hive nếu cần
     if enable_hive:
