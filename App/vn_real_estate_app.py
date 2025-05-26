@@ -5,12 +5,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
-import plotly.graph_objects as go
 import os
 import time
 from pyngrok import ngrok
 
-# Import các tiện ích Spark từ utils để giảm thiểu cảnh báo
+# Import các tiện ích Spark từ Demo/src/utils để giảm thiểu cảnh báo
+import sys
+import os
+
+# Thêm đường dẫn Demo/src vào sys.path để có thể import các module từ đó
+sys_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+demo_src_path = os.path.join(sys_path, 'Demo', 'src')
+sys.path.append(demo_src_path)
+
+# Giờ có thể import từ utils
 from utils.spark_utils import get_spark_session, configure_spark_logging
 
 # Import các thư viện Spark sau khi cấu hình logging
