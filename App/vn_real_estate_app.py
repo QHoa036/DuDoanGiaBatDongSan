@@ -344,7 +344,7 @@ def train_model(data):
         }
         return None
 
-# MARK: - Dự đoán giá dựa trên giá trung bình (dự phòng)
+# MARK: - Dự đoán giá (dự phòng)
 
 def predict_price_fallback(input_data, data):
     """
@@ -437,76 +437,100 @@ def predict_price_fallback(input_data, data):
 
 def predict_price(model, input_data):
     """
-    Dự đoán giá dựa trên đầu vào của người dùng.
+    Dự đoán giá bất động sản dựa trên đầu vào của người dùng.
+
+    Hàm này xử lý và chuẩn hóa dữ liệu đầu vào, sau đó sử dụng một trong ba phương pháp để dự đoán giá:
+    1. Mô hình Spark GBTRegressor (phương pháp chính)
+    2. Mô hình scikit-learn (dự phòng cấp 1)
+    3. Phương pháp thống kê tính trung bình có điều chỉnh (dự phòng cấp 2)
+
+    Parameters:
+    - model: Mô hình Spark Pipeline đã được huấn luyện
+    - input_data: Dictionary chứa thông tin bất động sản cần dự đoán giá
+
+    Returns:
+    - Giá trị dự đoán (float): Giá bất động sản được dự đoán (đơn vị triệu VND/m²)
     """
     try:
-        # Đảm bảo session state có dữ liệu
+        # Kiểm tra xem dữ liệu đã được tải vào session_state chưa
+        # Session state là cơ chế lưu trữ trạng thái giữa các lần chạy của Streamlit
         if 'data' not in st.session_state:
             st.error("Dữ liệu chưa được khởi tạo trong session state")
-            return 30000000  # Giá trị mặc định nếu không có dữ liệu
+            return 30000000  # Giá trị mặc định 30 triệu VND/m² nếu không có dữ liệu
 
-        # Chuyển dữ liệu đầu vào thành DataFrame
-        data_copy = {k: [v] for k, v in input_data.items()}
+        # Chuyển đổi dữ liệu đầu vào (dict) thành DataFrame
+        # Mỗi key-value trong input_data trở thành một cột-giá trị trong DataFrame
+        data_copy = {k: [v] for k, v in input_data.items()}  # Tạo dict với các giá trị là list để tạo DataFrame
 
-        # Tạo pandas DataFrame
+        # Tạo pandas DataFrame từ dictionary đã chuẩn bị
         input_df = pd.DataFrame(data_copy)
 
-        # Sao chép dữ liệu để không ảnh hưởng đến dữ liệu gốc
+        # Sao chép DataFrame để tránh thay đổi dữ liệu gốc
         data_copy = input_df.copy()
 
-        # Xử lý các giá trị không tồn tại
+        # Xử lý các giá trị null trong các trường số
+        # Các trường số phòng cần được chuyển thành số nguyên và điền -1 cho giá trị thiếu
         for col in data_copy.columns:
             if col in ["bedroom_num", "floor_num", "toilet_num", "livingroom_num"]:
-                data_copy[col] = data_copy[col].fillna(-1).astype(int)
+                data_copy[col] = data_copy[col].fillna(-1).astype(int)  # Thay giá trị null bằng -1 và chuyển thành số nguyên
 
-        # Đảm bảo chúng ta có các cột đúng tên chính xác
-        # Đảm bảo không sử dụng area_m2 mà sử dụng 'area (m2)'
+        # Đảm bảo tên của các trường dữ liệu tương thích với mô hình
+        # Mô hình được huấn luyện với tên cột 'area (m2)' nhưng dữ liệu đầu vào có thể dùng 'area_m2'
         if 'area_m2' in data_copy.columns and 'area (m2)' not in data_copy.columns:
-            data_copy['area (m2)'] = data_copy['area_m2'].copy()
-            del data_copy['area_m2']
+            data_copy['area (m2)'] = data_copy['area_m2'].copy()  # Tạo cột mới với tên chuẩn
+            del data_copy['area_m2']  # Xóa cột cũ để tránh trùng lập
 
-        # Đảm bảo không sử dụng street_width_m mà sử dụng 'street (m)'
+        # Tương tự, đảm bảo sử dụng đúng tên cột 'street (m)' thay vì 'street_width_m'
         if 'street_width_m' in data_copy.columns and 'street (m)' not in data_copy.columns:
             data_copy['street (m)'] = data_copy['street_width_m'].copy()
             del data_copy['street_width_m']
 
-        # Kiểm tra nếu Spark session tồn tại
+        # Kiểm tra nếu có thể sử dụng Spark - phương pháp chính cho dự đoán
+        # Hàm get_spark_session_cached() trả về session đã được cache hoặc None nếu không có
         spark = get_spark_session_cached()
 
         if spark is not None:
             try:
-                # Chuyển đổi dữ liệu sang Spark DataFrame
-                spark_df = convert_to_spark(data_copy)
+                # Chuyển đổi pandas DataFrame sang Spark DataFrame để dùng với mô hình
+                spark_df = convert_to_spark(data_copy)  # Chuyển đổi pandas DataFrame -> Spark DataFrame
 
-                # Dự đoán giá
-                predictions = model.transform(spark_df)
+                # Sử dụng mô hình Spark Pipeline để dự đoán giá
+                # Mô hình Pipeline bao gồm các bước: xử lý dữ liệu, chuẩn hóa, và dự đoán
+                predictions = model.transform(spark_df)  # Biến đổi và dự đoán
 
-                # Lấy kết quả dự đoán
-                prediction_value = predictions.select("prediction").collect()[0][0]
+                # Lấy giá trị dự đoán từ kết quả
+                prediction_value = predictions.select("prediction").collect()[0][0]  # Lấy giá trị dự đoán đầu tiên
+
                 if prediction_value is not None:
-                    return prediction_value
+                    return prediction_value  # Trả về giá trị dự đoán từ mô hình Spark nếu có
                 else:
-                    # Sử dụng phương pháp dự phòng nếu giá trị dự đoán là None
+                    # Nếu mô hình Spark trả về None, chuyển sang phương pháp dự phòng
                     st.warning("Kết quả dự đoán không hợp lệ, sử dụng phương pháp dự phòng.")
                     if 'data' in st.session_state:
+                        # Sử dụng phương pháp dự phòng với dữ liệu từ session_state
                         return predict_price_fallback(input_data, st.session_state.data)
                     else:
                         return 30000000  # Giá mặc định nếu không có dữ liệu
             except Exception as e:
+                # Xử lý lỗi khi dự đoán với Spark - chuyển sang phương pháp dự phòng
                 st.warning(f"Lỗi khi dự đoán với Spark: {e}. Sử dụng phương pháp dự phòng.")
                 if 'data' in st.session_state:
+                    # Sử dụng phương pháp dự phòng scikit-learn hoặc thống kê
                     return predict_price_fallback(input_data, st.session_state.data)
                 else:
                     return 30000000  # Giá mặc định nếu không có dữ liệu
         else:
-            # Sử dụng phương pháp dự phòng nếu không có Spark
+            # Nếu không có Spark session (ví dụ trên Windows hoặc máy không có Spark)
+            # Chuyển sang sử dụng phương pháp dự phòng ngay lập tức
             if 'data' in st.session_state:
                 return predict_price_fallback(input_data, st.session_state.data)
             else:
                 return 30000000  # Giá mặc định nếu không có dữ liệu
     except Exception as e:
+        # Xử lý lỗi tổng quát - hiển thị lỗi và trả về giá trị mặc định
         st.error(f"Lỗi khi chuẩn bị dữ liệu: {e}")
         # Sử dụng giá trị mặc định nếu tất cả các phương pháp đều thất bại
+        # Giá trị 30 triệu VND/m² là một ước tính hợp lý cho thị trường bất động sản Việt Nam
         return 30000000  # Giá mặc định nếu có lỗi
 
 # MARK: - Main App Flow
