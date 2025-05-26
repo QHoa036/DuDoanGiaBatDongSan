@@ -1,4 +1,5 @@
 # MARK: - Thư viện
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -7,21 +8,18 @@ import seaborn as sns
 import plotly.express as px
 import os
 import time
-from pyngrok import ngrok
-
-# Import các tiện ích Spark từ Demo/src/utils để giảm thiểu cảnh báo
 import sys
-import os
 
-# Thêm đường dẫn Demo/src vào sys.path để có thể import các module từ đó
-sys_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-demo_src_path = os.path.join(sys_path, 'Demo', 'src')
-sys.path.append(demo_src_path)
+# Cấu hình đường dẫn
+current_dir = os.path.dirname(os.path.abspath(__file__))
+app_src_path = os.path.join(current_dir, 'src')
+if app_src_path not in sys.path:
+    sys.path.append(app_src_path)
 
-# Giờ có thể import từ utils
+# Bây giờ có thể import từ thư mục src
 from utils.spark_utils import get_spark_session, configure_spark_logging
 
-# Import các thư viện Spark sau khi cấu hình logging
+# Import thư viện Spark
 from pyspark.ml.feature import VectorAssembler, StandardScaler
 from pyspark.ml.regression import GBTRegressor
 from pyspark.ml import Pipeline
@@ -30,7 +28,8 @@ from pyspark.ml.evaluation import RegressionEvaluator
 # Cấu hình logging để giảm thiểu cảnh báo
 configure_spark_logging()
 
-# MARK: - Global Variables
+# MARK: - Biến Toàn Cục
+
 # Khởi tạo biến toàn cục để lưu tên cột
 FEATURE_COLUMNS = {
     'area': 'area (m2)',
@@ -57,7 +56,7 @@ def load_css(css_file):
         return False
 
 # Load CSS từ file riêng biệt
-css_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'styles', 'main.css')
+css_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src', 'styles', 'main.css')
 if not load_css(css_path):
     st.error("Failed to load CSS from {css_path}. UI may not display correctly.")
     st.markdown("""
@@ -74,68 +73,75 @@ if not load_css(css_path):
     """, unsafe_allow_html=True)
 
 # MARK: - Khởi tạo phiên Spark
+
 @st.cache_resource
 def get_spark_session_cached():
-    """Phiên bản có cache của hàm khởi tạo Spark với cấu hình tối ưu và xử lý lỗi."""
+    """
+    Phiên bản có cache của hàm khởi tạo Spark với cấu hình tối ưu và xử lý lỗi.
+    """
     try:
         # Sử dụng tiện ích Spark đã cấu hình để giảm thiểu cảnh báo
         spark = get_spark_session(
             app_name="VNRealEstatePricePrediction",
             enable_hive=true
         )
-
         # Kiểm tra kết nối để đảm bảo Spark hoạt động
         spark.sparkContext.parallelize([1]).collect()
         return spark
-    except Exception as e:
+    except Exception:
         return None
 
 # MARK: - Đọc dữ liệu
+
 @st.cache_data
 def load_data(file_path=None):
-    """Đọc dữ liệu từ file CSV."""
+    """
+    Đọc dữ liệu từ file CSV.
+    """
     # Xác định đường dẫn tuyệt đối đến file dữ liệu
     if file_path is None:
         # Đường dẫn tương đối từ thư mục gốc của dự án
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(base_dir, 'data', 'final_data_cleaned.csv')
+        file_path = os.path.join(base_dir, 'src', 'data', 'final_data_cleaned.csv')
 
         # Kiểm tra xem file có tồn tại không
         if not os.path.exists(file_path):
             # Thử tìm file ở vị trí khác
             project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             alternate_paths = [
-                os.path.join(project_root, 'Data', 'Demo', 'final_data_cleaned.csv'),
-                os.path.join(project_root, 'Data', 'final_data_cleaned.csv'),
-                os.path.join(project_root, 'Demo', 'data', 'final_data_cleaned.csv')
+                os.path.join(project_root, 'Data', 'Demo', 'src', 'data', 'final_data_cleaned.csv'),
+                os.path.join(project_root, 'Demo', 'src', 'data', 'final_data_cleaned.csv')
             ]
 
             for alt_path in alternate_paths:
                 if os.path.exists(alt_path):
                     file_path = alt_path
                     break
-            else:
-                # Nếu không tìm thấy file ở bất kỳ vị trí nào
-                raise FileNotFoundError(
-                    f"❌ Không tìm thấy file dữ liệu tại: {file_path}\n"
-                    "Vui lòng đảm bảo rằng:\n"
-                    "1. Bạn đã tải dữ liệu và đặt trong thư mục Demo/data/\n"
-                    "2. File được đặt tên chính xác là 'Final Data Cleaned.csv'\n"
-                    "3. Bạn đã chạy toàn bộ quy trình từ đầu bằng run_demo.sh"
-                )
+
+                else:
+                    # Nếu không tìm thấy file ở bất kỳ vị trí nào
+                    raise FileNotFoundError(
+                        f"❌ Không tìm thấy file dữ liệu tại: {file_path}\n"
+                        "Vui lòng đảm bảo rằng:\n"
+                        "1. Bạn đã tải dữ liệu và đặt trong thư mục Demo/data/\n"
+                        "2. File được đặt tên chính xác là 'Final Data Cleaned.csv'\n"
+                        "3. Bạn đã chạy toàn bộ quy trình từ đầu bằng run_demo.sh"
+                    )
 
     try:
         # Đọc dữ liệu bằng pandas
         df = pd.read_csv(file_path)
         return df
     except Exception as e:
-        # Xử lý lỗi khi đọc file
         raise Exception(f"❌ Lỗi khi đọc file dữ liệu: {str(e)}")
 
 # MARK: - Xử lý dữ liệu
+
 @st.cache_data
 def preprocess_data(data):
-    """Tiền xử lý dữ liệu cho phân tích và mô hình hóa."""
+    """
+    Tiền xử lý dữ liệu cho phân tích và mô hình hóa.
+    """
     # Tạo bản sao để tránh cảnh báo của Pandas
     df = data.copy()
 
@@ -168,22 +174,25 @@ def preprocess_data(data):
     return df
 
 # MARK: - Chuyển đổi Spark
+
 @st.cache_resource
 def convert_to_spark(data):
-    """Chuyển đổi DataFrame pandas sang DataFrame Spark."""
+    """
+    Chuyển đổi DataFrame pandas sang DataFrame Spark.
+    """
     spark = get_spark_session_cached()
     if spark is not None:
         return spark.createDataFrame(data)
 
-# MARK: - Huấn luyện mô hình
+# MARK: - Huấn luyện
+
 @st.cache_resource
 def train_model(data):
-    """Huấn luyện mô hình dự đoán giá bất động sản."""
+    """
+    Huấn luyện mô hình dự đoán giá bất động sản.
+    """
     # Khởi tạo SparkSession
     spark = get_spark_session_cached()
-
-    # For debugging - commented out
-    # print(f"Các cột trong dữ liệu gốc trước khi chuyển đổi: {data.columns.tolist()}")
 
     # Đảm bảo dữ liệu có tất cả các cột cần thiết (cả tên cũ và mới)
     if 'area (m2)' in data.columns and 'area_m2' not in data.columns:
@@ -336,8 +345,11 @@ def train_model(data):
         return None
 
 # MARK: - Dự đoán giá dựa trên giá trung bình (dự phòng)
+
 def predict_price_fallback(input_data, data):
-    """Phương pháp dự phòng cho việc dự đoán giá khi Spark không khả dụng."""
+    """
+    Phương pháp dự phòng cho việc dự đoán giá khi Spark không khả dụng.
+    """
     # Hiển thị thông báo cảnh báo
     st.warning("Spark không khả dụng. Đang sử dụng phương pháp dự phòng để dự đoán giá.")
 
@@ -422,8 +434,11 @@ def predict_price_fallback(input_data, data):
         return 30000000  # Giá mặc định nếu có lỗi
 
 # MARK: - Dự đoán giá
+
 def predict_price(model, input_data):
-    """Dự đoán giá dựa trên đầu vào của người dùng."""
+    """
+    Dự đoán giá dựa trên đầu vào của người dùng.
+    """
     try:
         # Đảm bảo session state có dữ liệu
         if 'data' not in st.session_state:
@@ -494,34 +509,8 @@ def predict_price(model, input_data):
         # Sử dụng giá trị mặc định nếu tất cả các phương pháp đều thất bại
         return 30000000  # Giá mặc định nếu có lỗi
 
-# MARK: - Kết nối Ngrok
-def run_ngrok():
-    """Kết nối ứng dụng Streamlit với ngrok để tạo URL public."""
-    st.sidebar.subheader("Kết nối Ngrok")
-
-    ngrok_auth_token = st.sidebar.text_input("Nhập Ngrok Authtoken", type="password")
-
-    if ngrok_auth_token:
-        try:
-            # Thiết lập authtoken
-            ngrok.set_auth_token(ngrok_auth_token)
-
-            # Tạo tunnel HTTP đến cổng 8501 (cổng mặc định của Streamlit)
-            public_url = ngrok.connect(addr="8501", proto="http").public_url
-
-            st.sidebar.success("✅ Ngrok đã kết nối thành công!")
-            st.sidebar.markdown(f"**URL public:** {public_url}")
-            st.sidebar.markdown("Chia sẻ URL này để người khác có thể truy cập ứng dụng của bạn.")
-
-            # Lưu URL vào session_state để giữ giá trị giữa các lần chạy lại ứng dụng
-            st.session_state["ngrok_url"] = public_url
-
-        except Exception as e:
-            st.sidebar.error(f"❌ Lỗi khi kết nối Ngrok: {e}")
-    else:
-        st.sidebar.info("ℹ️ Nhập Ngrok Authtoken để tạo URL public. Bạn có thể lấy token miễn phí tại [ngrok.com](https://ngrok.com).")
-
 # MARK: - Main App Flow
+
 # Tải dữ liệu
 data = load_data()
 
@@ -544,12 +533,12 @@ if not data.empty:
             r2_score = 0.0
             rmse = 0.0
 
-    # Nếu không có dữ liệu, hiển thị thông báo
 else:
     st.error("Không thể tải dữ liệu. Vui lòng kiểm tra đường dẫn đến file dữ liệu.")
     st.stop()
 
 # MARK: - Sidebar
+
 st.sidebar.markdown("""
 <div class="sidebar-header">
     <img src="https://img.icons8.com/fluency/96/000000/home.png" alt="Logo">
@@ -573,7 +562,7 @@ def set_app_mode(mode):
 app_mode = st.session_state['app_mode']
 
 # Danh sách các chế độ ứng dụng
-app_modes = ["Dự đoán giá", "Phân tích dữ liệu", "Về dự án"]
+app_modes = ["Dự đoán giá", "Trực quan hóa", "Về dự án"]
 
 # Container cho menu
 menu_container = st.sidebar.container()
@@ -627,29 +616,21 @@ st.sidebar.markdown("""
 
 # MARK: - Footer sidebar
 
-# Footer của sidebar
+# Footer
 st.sidebar.markdown("""<hr class="hr-divider">""", unsafe_allow_html=True)
 st.sidebar.markdown("""
-<div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="info-icon">
-        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M12 16V12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M12 8H12.01" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <span>Dự đoán giá BĐS Việt Nam</span>
-</div>
-
 <div class="flex-container">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="info-icon">
         <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
-    <span>Nguồn: nhadat.cafeland.vn</span>
+    <span>nhadat.cafeland.vn</span>
 </div>
 """, unsafe_allow_html=True)
 st.sidebar.markdown("</div>", unsafe_allow_html=True)
 
 # MARK: - Chế độ Dự đoán giá
+
 if app_mode == "Dự đoán giá":
     # Tiêu đề trang
     st.markdown("""
@@ -930,9 +911,9 @@ if app_mode == "Dự đoán giá":
             except Exception as e:
                 st.error(f"Lỗi khi dự đoán: {e}")
 
-# CHẾ ĐỘ 2: PHÂN TÍCH DỮ LIỆU
-# MARK: - Chế độ Phân tích dữ liệu
-elif app_mode == "Phân tích dữ liệu":
+# MARK: - Chế độ Trực quan hóa
+
+elif app_mode == "Trực quan hóa":
     # Tiêu đề trang
     statistics_header = """
     <div class="modern-header">
@@ -955,11 +936,9 @@ elif app_mode == "Phân tích dữ liệu":
     st.markdown(statistics_header, unsafe_allow_html=True)
 
     # Tạo tabs để phân chia nội dung
-    tab1, tab2, tab3 = st.tabs(["Phân phối giá", "Phân tích vị trí", "Đặc điểm bất động sản"])
+    tab1, tab2, tab3 = st.tabs(["Giá BĐS", "Khu vực", "Đặc điểm BĐS"])
 
     with tab1:
-        st.markdown("## Phân tích phân phối giá bất động sản")
-
         # Thông tin thống kê tổng quan
         avg_price = data["price_per_m2"].mean()
         max_price = data["price_per_m2"].max()
@@ -1142,8 +1121,6 @@ elif app_mode == "Phân tích dữ liệu":
         st.dataframe(filtered_data[["city_province", "district", "area_m2", "price_per_m2", "category"]].head(10), use_container_width=True)
 
     with tab2:
-        st.markdown("## Phân tích giá theo vị trí địa lý")
-
         # Tổng hợp thông tin theo khu vực
         total_provinces = data["city_province"].nunique()
         total_districts = data["district"].nunique()
@@ -1263,36 +1240,64 @@ elif app_mode == "Phân tích dữ liệu":
         st.plotly_chart(fig, use_container_width=True)
 
     with tab3:
-        st.markdown("## Phân tích mối quan hệ giữa đặc điểm và giá")
+        # Tính toán các thống kê đặc biệt về bất động sản
+        try:
+            # Loại hình BĐS phổ biến nhất
+            top_category = data["category"].value_counts().idxmax() if "category" in data.columns else "Không xác định"
+            top_category_pct = data["category"].value_counts().max() / len(data) * 100 if "category" in data.columns else 0
 
-        # Thống kê tổng quan về đặc điểm bất động sản
-        avg_area = data["area_m2"].mean()
-        avg_bedroom = data["bedroom_num"].mean()
-        price_area_corr = data[["price_per_m2", "area_m2"]].corr().iloc[0, 1]
-        numeric_features_count = len([col for col in data.columns if pd.api.types.is_numeric_dtype(data[col])])
+            # Quận/huyện có giá cao nhất
+            if "district" in data.columns and "price_per_m2" in data.columns:
+                top_district = data.groupby("district")["price_per_m2"].mean().idxmax()
+                top_district_price = data.groupby("district")["price_per_m2"].mean().max()
+            else:
+                top_district = "Không xác định"
+                top_district_price = 0
+
+            # Quận/huyện có nhiều bất động sản nhất
+            if "district" in data.columns:
+                most_listings_district = data["district"].value_counts().idxmax()
+                most_listings_count = data["district"].value_counts().max()
+            else:
+                most_listings_district = "Không xác định"
+                most_listings_count = 0
+
+            # Thời gian niêm yết trung bình (nếu có)
+            if "listing_time" in data.columns and pd.api.types.is_numeric_dtype(data["listing_time"]):
+                avg_listing_time = data["listing_time"].mean()
+            else:
+                avg_listing_time = 30  # Giá trị mặc định
+        except Exception as e:
+            st.error(f"Lỗi khi tính toán thống kê: {str(e)}")
+            top_category, top_district = "Lỗi dữ liệu", "Lỗi dữ liệu"
+            most_listings_district, top_category_pct = "Lỗi dữ liệu", 0
+            top_district_price, most_listings_count, avg_listing_time = 0, 0, 0
 
         # Hiển thị thống kê tổng quan trong grid
-        st.markdown('<div style="height: 15px;"></div>', unsafe_allow_html=True)
-        st.markdown("""
+        st.markdown(f'''
         <div class="data-grid">
-            <div class="stat-card">
-                <div class="stat-value">{:.1f}</div>
-                <div class="stat-label">Diện tích trung bình (m²)</div>
+            <div class="stat-card" style="--accent-color: #FF6B6B;">
+                <div class="stat-label">Loại BĐS phổ biến nhất</div>
+                <div class="stat-value">{top_category}</div>
+                <div class="stat-info">Chiếm {top_category_pct:.1f}% tổng số bất động sản</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">{:.1f}</div>
-                <div class="stat-label">Số phòng ngủ trung bình</div>
+            <div class="stat-card" style="--accent-color: #4ECDC4;">
+                <div class="stat-label">Khu vực đắt đỏ nhất</div>
+                <div class="stat-value">{top_district}</div>
+                <div class="stat-info">Giá trung bình {top_district_price:.1f} triệu/m²</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">{:.2f}</div>
-                <div class="stat-label">Tương quan giá-diện tích</div>
+            <div class="stat-card" style="--accent-color: #FFD166;">
+                <div class="stat-label">Khu vực có nhiều BDS nhất</div>
+                <div class="stat-value">{most_listings_district}</div>
+                <div class="stat-info">{most_listings_count} bất động sản đang bán</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">{:d}</div>
-                <div class="stat-label">Số đặc trưng số</div>
+            <div class="stat-card" style="--accent-color: #6A0572;">
+                <div class="stat-label">Thời gian niêm yết trung bình</div>
+                <div class="stat-value">{avg_listing_time:.0f} ngày</div>
+                <div class="stat-info">Thời gian bán trung bình của bất động sản</div>
             </div>
         </div>
-        """.format(avg_area, avg_bedroom, price_area_corr, numeric_features_count), unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
 
         # Card 1: Tương quan giữa diện tích và giá
         st.markdown("""
@@ -1374,14 +1379,38 @@ elif app_mode == "Phân tích dữ liệu":
         """, unsafe_allow_html=True)
 
         # Chọn các đặc trưng số để tính tương quan
-        numeric_features = ["area_m2", "bedroom_num", "floor_num", "toilet_num", "livingroom_num", "street_width_m", "price_per_m2"]
+        # Sử dụng tất cả các đặc điểm số
+        numeric_features = ["price_per_m2", "area_m2", "bedroom_num", "floor_num", "toilet_num", "livingroom_num", "street_width_m"]
+
+        # Tạo bảng dich tên các đặc điểm sang tiếng Việt ngắn gọn
+        feature_names = {
+            "price_per_m2": "Giá/m²",
+            "area_m2": "DT",
+            "bedroom_num": "P.Ngủ",
+            "toilet_num": "WC",
+            "livingroom_num": "P.Khách",
+            "floor_num": "Tầng",
+            "street_width_m": "Đường"
+        }
+
+        # Tính toán ma trận tương quan
         corr_matrix = data[numeric_features].corr()
 
-        # Vẽ heatmap tương quan
-        fig, ax = plt.subplots(figsize=(10, 8))
-        sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", ax=ax, fmt=".2f")
-        plt.title("Ma trận tương quan giữa các đặc điểm")
-        st.pyplot(fig)
+        # Đổi tên cột và chỉ mục thành tiếng Việt ngắn gọn
+        corr_matrix_renamed = corr_matrix.rename(index=feature_names, columns=feature_names)
+
+        # Sử dụng layout 3 cột để căn giữa biểu đồ
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            # Vẽ heatmap tương quan nhỏ gọn hơn và căn giữa
+            fig, ax = plt.subplots(figsize=(5, 4))
+            sns.heatmap(corr_matrix_renamed, annot=True, cmap="coolwarm", ax=ax,
+                    fmt=".2f", linewidths=0.5, annot_kws={"size": 7})
+            plt.title("Tương quan giữa các đặc điểm", fontsize=10)
+            plt.xticks(fontsize=7, rotation=45, ha='right')
+            plt.yticks(fontsize=7)
+            plt.tight_layout()
+            st.pyplot(fig)
 
         # Card 3: Phân tích theo đặc điểm
         st.markdown('<div style="height: 30px;"></div>', unsafe_allow_html=True)
@@ -1403,46 +1432,84 @@ elif app_mode == "Phân tích dữ liệu":
         </div>
         """, unsafe_allow_html=True)
 
+        # Tạo bảng ánh xạ giữa tên cột và tên hiển thị tiếng Việt
+        feature_display_names = {
+            "category": "Loại hình BĐS",
+            "direction": "Hướng nhà",
+            "liability": "Tình trạng pháp lý",
+            "bedroom_num": "Số phòng ngủ",
+            "floor_num": "Số tầng",
+            "toilet_num": "Số nhà vệ sinh",
+            "livingroom_num": "Số phòng khách",
+            "area_m2": "Diện tích (m²)"
+        }
+
+        # Phân nhóm đặc điểm theo loại
+        numeric_features = ["bedroom_num", "floor_num", "toilet_num", "livingroom_num", "area_m2"]
+        categorical_features = ["category", "direction", "liability"]
+
+        # Tạo danh sách tùy chọn để hiển thị trong selectbox
+        feature_options = [(f, feature_display_names[f]) for f in numeric_features + categorical_features]
+
         # Chọn đặc điểm để phân tích
-        feature = st.selectbox(
+        feature_option = st.selectbox(
             "Chọn đặc điểm",
-            ["category", "direction", "liability", "bedroom_num", "floor_num"]
+            options=[opt[0] for opt in feature_options],
+            format_func=lambda x: feature_display_names[x]
         )
 
+        # Lấy tên đặc điểm được chọn
+        feature = feature_option
+        display_name = feature_display_names[feature]
+
         # Tính giá trung bình theo đặc điểm đã chọn
-        if feature in ["bedroom_num", "floor_num"]:
+        if feature in numeric_features:
             # Đối với đặc điểm số, chuyển đổi thành chuỗi để nhóm
             data["feature_str"] = data[feature].astype(str)
             feature_price = data.groupby("feature_str")["price_per_m2"].mean().reset_index()
-            feature_price.columns = [feature, "Giá trung bình/m²"]
+            feature_price.columns = [display_name, "Giá trung bình/m²"]
 
             # Sắp xếp theo thứ tự số
-            feature_price[feature] = feature_price[feature].astype(float)
-            feature_price = feature_price.sort_values(by=feature)
-            feature_price[feature] = feature_price[feature].astype(str)
+            feature_price[display_name] = feature_price[display_name].astype(float)
+            feature_price = feature_price.sort_values(by=display_name)
+            feature_price[display_name] = feature_price[display_name].astype(str)
         else:
             # Đối với đặc điểm phân loại
             feature_price = data.groupby(feature)["price_per_m2"].mean().sort_values(ascending=False).reset_index()
-            feature_price.columns = [feature, "Giá trung bình/m²"]
+            feature_price.columns = [display_name, "Giá trung bình/m²"]
 
         # Vẽ biểu đồ
         fig = px.bar(
             feature_price,
-            x=feature,
+            x=display_name,
             y="Giá trung bình/m²",
             color="Giá trung bình/m²",
             color_continuous_scale='Viridis',
-            template="plotly_white"
+            template="plotly_white",
+            title=f"Giá trung bình theo {display_name}"
         )
 
         # Cập nhật layout của biểu đồ
         fig.update_layout(
-            margin=dict(t=0, b=0, l=0, r=0),
-            coloraxis_colorbar=dict(tickfont=dict(color='#333333'))
+            title={
+                'text': f"Giá trung bình theo {display_name}",
+                'y':0.95,
+                'x':0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': {'size': 16}
+            },
+            margin=dict(t=50, b=30, l=30, r=30),
+            coloraxis_colorbar=dict(tickfont=dict(color='#333333')),
+            xaxis_title=display_name,
+            yaxis_title="Giá trung bình/m² (triệu VND)"
         )
+
+        # Điều chỉnh khích thước và vị trí của title trong thanh trượt
         st.plotly_chart(fig, use_container_width=True)
 
 # MARK: - Chế độ Về dự án
+
 elif app_mode == "Về dự án":
     # Khối header với logo và tiêu đề
     st.markdown("""

@@ -132,8 +132,6 @@ class DataService:
                     # Thử tìm file ở vị trí khác
                     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     alternate_paths = [
-                        os.path.join(project_root, 'Data', 'Demo', 'final_data_cleaned.csv'),
-                        os.path.join(project_root, 'Data', 'final_data_cleaned.csv'),
                         os.path.join(project_root, 'Demo', 'data', 'final_data_cleaned.csv')
                     ]
 

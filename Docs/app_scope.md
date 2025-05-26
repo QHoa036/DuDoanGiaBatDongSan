@@ -1,6 +1,6 @@
-## 🎯 Dự Đoán Giá Bất Động Sản Việt Nam
+# 🎯 Dự Đoán Giá Bất Động Sản Việt Nam
 
-### 1. Kiến trúc ứng dụng
+## 1. Kiến trúc ứng dụng
 
 * Ứng dụng được xây dựng theo mô hình **MVVM (Model-View-ViewModel)**:
 
@@ -13,7 +13,7 @@
   * Ghi vào cả console và tập tin
   * Giao diện xem và quản lý nhật ký
 
-### 2. Tham số đầu vào
+## 2. Tham số đầu vào
 
 * Mô hình yêu cầu các thông tin sau:
 
@@ -26,7 +26,7 @@
   * Tất cả các trường bắt buộc phải được cung cấp để dự đoán chính xác
   * Dữ liệu phải tuân thủ các phạm vi và định dạng mong đợi
 
-### 3. Yêu cầu xử lý dữ liệu
+## 3. Yêu cầu xử lý dữ liệu
 
 * Dữ liệu đầu vào nên được cấu trúc dưới dạng **JSON** để xử lý
 * Xác thực dữ liệu bao gồm:
@@ -34,7 +34,7 @@
   * Năm xây dựng phải nằm trong khoảng hợp lý
   * Ghi nhật ký các lỗi xác thực với cấp độ WARNING hoặc ERROR
 
-### 4. Xử lý mô hình
+## 4. Xử lý mô hình
 
 * Hệ thống dự đoán:
 
@@ -50,7 +50,7 @@
   * Ghi lại thời gian thực thi của các bước quan trọng
   * Xử lý lỗi một cách thanh lịch với thông báo lỗi phù hợp
 
-### 5. Định dạng đầu ra
+## 5. Định dạng đầu ra
 
 * Kết quả dự đoán bao gồm:
 
@@ -63,7 +63,7 @@
   * Thông tin thống kê bao gồm giá tối thiểu, trung bình và tối đa trong khu vực
   * Biểu đồ trực quan hóa so sánh
 
-### 6. Yêu cầu kỹ thuật
+## 6. Yêu cầu kỹ thuật
 
 * **Mô hình học máy**:
 
@@ -79,37 +79,37 @@
 
   * Thông tin người dùng nhạy cảm (như địa chỉ chi tiết) không được ghi nhật ký
   * Hệ thống nhật ký có cơ chế lọc thông tin nhạy cảm trước khi ghi
-  * Configuration details should be stored securely and excluded from version control.
+  * Các thông tin cấu hình phải được lưu trữ an toàn và loại trừ khỏi kiểm soát phiên bản
 
-### 6. Environment Requirements
+## 7. Yêu cầu môi trường
 
-* **Cross-Platform Support**:
+* **Hỗ trợ đa nền tảng**:
 
-  * The model can run on macOS, Linux, and Windows environments.
-  * OS-specific dependencies may be required.
-  * Python virtual environments are recommended for dependency management.
-* **Environment Configuration**:
+  * Mô hình có thể chạy trên macOS, Linux và Windows
+  * Có thể cần các phụ thuộc đặc thù theo hệ điều hành
+  * Khuyến nghị sử dụng môi trường ảo Python để quản lý phụ thuộc
+* **Cấu hình môi trường**:
 
-  * Environment variables may be used for configuration.
-  * Sensitive configuration should be stored in separate files not included in version control.
-* **Version Control**:
+  * Có thể sử dụng biến môi trường cho cấu hình
+  * Cấu hình nhạy cảm nên được lưu trữ trong các tập tin riêng không đưa vào kiểm soát phiên bản
+* **Kiểm soát phiên bản**:
 
-  * The following should be excluded from version control:
-    * Sensitive configuration files
-    * Datasets
-    * Environment-specific files
-    * Generated artifacts
+  * Các mục sau nên được loại trừ khỏi kiểm soát phiên bản:
+    * Tập tin cấu hình nhạy cảm
+    * Bộ dữ liệu
+    * Tập tin đặc thù theo môi trường
+    * Các tài nguyên được tạo ra
 
 ---
 
-## ✨ Enhancements
+## Tính năng nâng cao
 
-* Informative messaging:
-  * Status messages to indicate successful prediction.
-* Smart input validation:
+* Thông báo thông minh:
+  * Thông báo trạng thái để chỉ rõ việc dự đoán thành công
+* Xác thực đầu vào thông minh:
 
-  * "Area too small" warnings (e.g., under 10m²)
-  * "Unusual construction year" warnings (e.g., year > current year)
-* Data visualization:
+  * Cảnh báo "Diện tích quá nhỏ" (ví dụ: dưới 10m²)
+  * Cảnh báo "Năm xây dựng bất thường" (ví dụ: năm > năm hiện tại)
+* Trực quan hóa dữ liệu:
 
-  * Clear presentation of results with appropriate visual elements.
+  * Hiển thị kết quả rõ ràng với các yếu tố hình ảnh phù hợp

@@ -54,7 +54,7 @@ class AppViewModel:
         initialize_session()
 
         # Quản lý các trang
-        self._app_modes = ["Dự đoán giá", "Phân tích dữ liệu", "Về dự án"]
+        self._app_modes = ["Dự đoán giá", "Trực quan hóa", "Về dự án"]
 
     # MARK: - Thuộc tính
 
@@ -118,15 +118,21 @@ class AppViewModel:
             # Chuyển đổi sang Spark DataFrame
             spark_df = self._data_service.convert_to_spark(preprocessed_data)
 
-            # Huấn luyện mô hình nếu Spark khả dụng
+            # Huấn luyện mô hình
             if spark_df is not None:
+                # Nếu Spark khả dụng, sử dụng Spark DataFrame
                 self._data_service.train_model(spark_df)
-                metrics = self._data_service.model_metrics
-                if metrics:
-                    for name, value in metrics.items():
-                        self.logger.info(f"Chỉ số {name}: {value:.4f}")
+                self.logger.info("Đã huấn luyện mô hình với Spark")
             else:
-                self.logger.warning("Không thể khởi tạo Spark DataFrame, bỏ qua huấn luyện mô hình")
+                # Fallback: Sử dụng scikit-learn nếu Spark không khả dụng
+                self.logger.warning("Không thể khởi tạo Spark DataFrame, sử dụng scikit-learn fallback")
+                self._data_service.train_model(None)  # Truyền None sẽ kích hoạt fallback
+
+            # Hiển thị thông tin metrics
+            metrics = self._data_service.model_metrics
+            if metrics:
+                for name, value in metrics.items():
+                    self.logger.info(f"Chỉ số {name}: {value:.4f}")
 
             self.logger.info("Khởi tạo ứng dụng hoàn tất")
 
