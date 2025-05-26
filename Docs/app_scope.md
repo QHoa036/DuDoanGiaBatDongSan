@@ -1,76 +1,115 @@
-## 🎯 Demo Deployment Rules (Streamlit + Ngrok)
+## 🎯 Dự Đoán Giá Bất Động Sản Việt Nam
 
-### 1. User Interface (Frontend Requirements)
+### 1. Kiến trúc ứng dụng
 
-* Use **Streamlit** to build the web interface.
-* Users must fill in the following information:
+* Ứng dụng được xây dựng theo mô hình **MVVM (Model-View-ViewModel)**:
 
-  * **Location**: select from a map (map selector) or a dropdown list of addresses.
-  * **Area**: input as a number (in square meters).
-  * **Number of Rooms**: input as a number.
-  * **Legal Status**, **House Direction**, **Year of Construction**: input manually or select from suggestions.
-* Input validation:
+  * **Model**: Xử lý dữ liệu và triển khai logic nghiệp vụ
+  * **View**: Giao diện người dùng với Streamlit
+  * **ViewModel**: Kết nối Model và View, xử lý tương tác
+* Hệ thống nhật ký đa cấp độ tích hợp:
 
-  * The form **cannot be submitted** if any required fields are missing.
-  * Clear error messages must be displayed for missing or invalid inputs.
+  * Các cấp độ: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  * Ghi vào cả console và tập tin
+  * Giao diện xem và quản lý nhật ký
 
-### 2. Data Submission to Server (API Request Requirements)
+### 2. Tham số đầu vào
 
-* User data must be sent **via API** to the backend server:
+* Mô hình yêu cầu các thông tin sau:
 
-  * Data should be structured as a **JSON** object.
-  * Validate the inputs before sending (e.g., area must be > 0, construction year must be reasonable).
-* A **loading indicator** or "predicting..." status must be shown while waiting for the server’s response.
+  * **Vị trí**: tọa độ địa lý hoặc địa chỉ chuẩn hóa
+  * **Diện tích**: kích thước tính bằng mét vuông
+  * **Số phòng**: giá trị nguyên
+  * **Tình trạng pháp lý**, **Hướng nhà**, **Năm xây dựng**: giá trị phân loại hoặc số
+* Xác thực đầu vào:
 
-### 3. Server-side Processing (Backend Requirements)
+  * Tất cả các trường bắt buộc phải được cung cấp để dự đoán chính xác
+  * Dữ liệu phải tuân thủ các phạm vi và định dạng mong đợi
 
-* The server must:
+### 3. Yêu cầu xử lý dữ liệu
 
-  * Receive data from the frontend.
-  * Run the **pre-trained real estate price prediction model**.
-  * Return the predicted result:
+* Dữ liệu đầu vào nên được cấu trúc dưới dạng **JSON** để xử lý
+* Xác thực dữ liệu bao gồm:
+  * Diện tích phải > 0
+  * Năm xây dựng phải nằm trong khoảng hợp lý
+  * Ghi nhật ký các lỗi xác thực với cấp độ WARNING hoặc ERROR
 
-    * **Price per square meter** or
-    * **Total property price**.
+### 4. Xử lý mô hình
 
-* Server-side validation:
+* Hệ thống dự đoán:
 
-  * Ensure all incoming data is valid.
-  * Handle errors gracefully (e.g., if the model crashes or data is invalid, return a clear and informative error message).
+  * Xử lý dữ liệu đầu vào đã cấu trúc
+  * Chạy **mô hình dự đoán giá bất động sản đã được huấn luyện trước**
+  * Tạo kết quả dự đoán:
 
-### 4. Result Display (Frontend Result Display)
+    * **Giá trên mỗi mét vuông** hoặc
+    * **Tổng giá trị bất động sản**
 
-* Display the prediction results clearly to the user:
+* Quá trình xử lý được ghi nhật ký chi tiết:
 
-  * Show both the **price per square meter** and **total price** if needed.
-* Display a **chart of the average prices** for surrounding areas:
+  * Ghi lại thời gian thực thi của các bước quan trọng
+  * Xử lý lỗi một cách thanh lịch với thông báo lỗi phù hợp
 
-  * Use `st.bar_chart`, `st.line_chart`, or third-party libraries like Plotly.
-  * Include additional information such as minimum, average, and maximum prices in the neighborhood.
+### 5. Định dạng đầu ra
 
-### 5. Supporting Tools and Technical Requirements
+* Kết quả dự đoán bao gồm:
 
-* **Streamlit**: for creating a simple and interactive web interface.
-* **Ngrok**:
+  * Tính toán **giá trên mỗi mét vuông** và **tổng giá**
+  * **Khoảng tin cậy** của dự đoán
 
-  * Use Ngrok to expose the local server to a public URL for demonstration.
-  * Ensure the Ngrok link remains active during the entire demo.
-* **Machine Learning Model**:
+* Phân tích so sánh:
 
-  * The model must be pre-loaded when the server starts (no retraining on every request).
-* **Minimum Security Standards**:
+  * Giá trung bình cho các khu vực xung quanh
+  * Thông tin thống kê bao gồm giá tối thiểu, trung bình và tối đa trong khu vực
+  * Biểu đồ trực quan hóa so sánh
 
-  * Do not log sensitive user information (like detailed addresses) to the console or logs.
+### 6. Yêu cầu kỹ thuật
+
+* **Mô hình học máy**:
+
+  * Mô hình được huấn luyện trước và có thể được tải theo yêu cầu
+  * Không yêu cầu huấn luyện lại trong quá trình dự đoán
+
+* **Đa nền tảng**:
+
+  * Chạy trên Windows, macOS và Linux
+  * Tích hợp Ngrok để tạo URL công khai
+
+* **Tiêu chuẩn bảo mật tối thiểu**:
+
+  * Thông tin người dùng nhạy cảm (như địa chỉ chi tiết) không được ghi nhật ký
+  * Hệ thống nhật ký có cơ chế lọc thông tin nhạy cảm trước khi ghi
+  * Configuration details should be stored securely and excluded from version control.
+
+### 6. Environment Requirements
+
+* **Cross-Platform Support**:
+
+  * The model can run on macOS, Linux, and Windows environments.
+  * OS-specific dependencies may be required.
+  * Python virtual environments are recommended for dependency management.
+* **Environment Configuration**:
+
+  * Environment variables may be used for configuration.
+  * Sensitive configuration should be stored in separate files not included in version control.
+* **Version Control**:
+
+  * The following should be excluded from version control:
+    * Sensitive configuration files
+    * Datasets
+    * Environment-specific files
+    * Generated artifacts
 
 ---
 
-## ✨ Bonus – Extra Points for Demo
+## ✨ Enhancements
 
-* Show a success message like **"Prediction completed successfully!"** after the result is returned.
-* Add smart input warnings such as:
+* Informative messaging:
+  * Status messages to indicate successful prediction.
+* Smart input validation:
 
-  * "Area too small" (e.g., under 10m²)
-  * "Unusual construction year" (e.g., year > current year)
-* Light UI decoration:
+  * "Area too small" warnings (e.g., under 10m²)
+  * "Unusual construction year" warnings (e.g., year > current year)
+* Data visualization:
 
-  * Use Streamlit’s layout and components to add a polished look (icons like 🏠, gentle color themes).
+  * Clear presentation of results with appropriate visual elements.

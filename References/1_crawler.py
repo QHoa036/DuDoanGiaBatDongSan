@@ -27,7 +27,6 @@ from selenium.webdriver.common.by import By
 # Import thư viện cần thiết
 import time
 import random
-import csv
 import pandas as pd
 
 """# Thu thập dữ liệu"""
@@ -70,19 +69,17 @@ for page in range(1, 2):
     time.sleep(random.uniform(3,6)) # Sử dụng random để mô phỏng người dùng thật, tránh bị chặn
 
     try:
-      # Tìm tất cả phần tử chứa bài đăng
+    # Tìm tất cả phần tử chứa bài đăng
         posts = driver.find_elements(By.XPATH, "//div[contains(@class, 'property-list')]/div[contains(@class, 'row-item')]")
 
-      # Trích xuất liên kết bài đăng từ thẻ <a>, sau đó lưu vào danh sách article_link
+    # Trích xuất liên kết bài đăng từ thẻ <a>, sau đó lưu vào danh sách article_link
         for post in posts:
             try:
                 link_elem = post.find_elements(By.XPATH, ".//a")
 
                 link = link_elem[0].get_attribute("href") if link_elem else ""
 
-                article_link.append({
-                  "link": link
-                })
+                article_link.append({ "link": link })
 
             except Exception as e:
                 print("Lỗi khi xử lý 1 bài:", e)

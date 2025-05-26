@@ -1,0 +1,14 @@
+# ngrok configuration file
+# See: https://ngrok.com/docs/ngrok-agent/config/
+
+version: "2"
+region: us
+log_level: critical
+log_format: json
+update_check: false
+
+# Disable console UI completely
+console_ui: false
+
+# The web interface is disabled by default for security
+web_addr: 127.0.0.1:4040

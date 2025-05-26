@@ -107,9 +107,3 @@ derby.log
 
 # Streamlit
 .streamlit/secrets.toml
-
-# Generated datasets
-Dataset/
-datasets/
-raw_data/
-processed_data/
