@@ -1044,47 +1044,6 @@ elif app_mode == "Trực quan hóa":
         </div>
         """.format(avg_price, median_price, max_price, len(data)), unsafe_allow_html=True)
 
-        # Card 1: Biểu đồ phân phối giá
-        st.markdown("""
-        <div class="chart-card">
-            <div class="chart-header">
-                <div class="chart-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 3v18h18"></path>
-                        <path d="M18 12h-2"></path>
-                        <path d="M13 8h-2"></path>
-                        <path d="M8 16H6"></path>
-                    </svg>
-                </div>
-                <div class="chart-title-container">
-                    <div class="chart-title">Phân phối giá bất động sản</div>
-                    <div class="chart-desc">So sánh phân phối giá gốc và phân phối giá sau biến đổi logarit</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Vẽ biểu đồ phân phối giá
-        fig, ax = plt.subplots(1, 2, figsize=(14, 6))
-
-        # Phân phối giá ban đầu
-        sns.histplot(data["price_per_m2"], kde=True, ax=ax[0])
-        ax[0].set_title("Phân phối giá / m²")
-        ax[0].set_xlabel("Giá (VND/m²)")
-        ax[0].set_ylabel("Số lượng")
-
-        # Phân phối giá sau khi biến đổi log
-        sns.histplot(np.log1p(data["price_per_m2"]), kde=True, ax=ax[1])
-        ax[1].set_title("Phân phối logarit của giá / m²")
-        ax[1].set_xlabel("ln(Giá/m²)")
-        ax[1].set_ylabel("Số lượng")
-
-        plt.tight_layout()
-        st.pyplot(fig)
-
-        # Thêm khoảng trống
-        st.markdown('<div style="height: 30px;"></div>', unsafe_allow_html=True)
-
         # Card 2: Lọc theo khoảng giá
         st.markdown("""
         <div class="chart-card">
