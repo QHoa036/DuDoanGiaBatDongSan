@@ -1,8 +1,19 @@
-# Ứng Dụng Dự Đoán Giá Bất Động Sản Việt Nam
+# MÔN: DỮ LIỆU LỚN VÀ ỨNG DỤNG
+
+## Ứng Dụng Dự Đoán Giá Bất Động Sản Việt Nam
 
 ## Giới thiệu
 
 Ứng dụng dự đoán giá bất động sản Việt Nam được xây dựng trên nền tảng Streamlit, PySpark và mô hình học máy. Ứng dụng cung cấp khả năng dự đoán giá bất động sản dựa trên các đặc điểm của tài sản và phân tích dữ liệu thị trường bất động sản.
+
+## 👥 Nhóm phát triển
+
+- **Lê Thị Cẩm Giang** - Tác giả  <https://github.com/lcg1908>
+- **Nguyễn Quỳnh Anh** - Đồng tác giả  <https://github.com/Quynanhng25>
+- **Nguyễn Cao Hoài Duyên** - Đồng tác giả <https://github.com/CaoHoaiDuyen>
+- **Đinh Trương Ngọc Quỳnh Hoa** - Đồng tác giả <https://github.com/QHoa036>
+- **Trần Hoàng Nghĩa** - Đồng tác giả <https://github.com/Blink713>
+- **Nguyễn Phương Thảo** - Đồng tác giả <https://github.com/thaonguyenbi>
 
 ## Cấu trúc kiến trúc MVVM
 
@@ -13,37 +24,16 @@
 ```txt
 Vietnam_Real_Estate_Price_Prediction/
 │── App/                                   # Ứng dụng chính
-│── Demo/                                  # Phiên bản demo
-│   │── data/                              # Dữ liệu mẫu cho phiên bản demo
-│   │── main.py                            # Điểm vào chính của demo
 │   └── src/                               # Mã nguồn chính của ứng dụng
-│       │── config/                         # Cấu hình ứng dụng
+│       │── data/                          # Dữ liệu mẫu cho phiên bản demo
 │       │── logs/                          # Thư mục nhật ký
-│       │── models/                        # Mô hình dữ liệu
-│       │   └── property_model.py          # Mô hình dữ liệu bất động sản
-│       │── services/                      # Dịch vụ dữ liệu và mô hình
-│       │   └── data_service.py            # Dịch vụ xử lý dữ liệu và mô hình
 │       │── styles/                        # CSS và các tài nguyên giao diện
 │       │── utils/                         # Các tiện ích
-│       │   │── logger_utils.py            # Hệ thống nhật ký
-│       │   │── ngrok_utils.py             # Tiện ích Ngrok
-│       │   │── session_utils.py           # Quản lý session
 │       │   │── spark_utils.py             # Tiện ích PySpark
-│       │   └── ui_utils.py                # Tiện ích giao diện
-│       │── viewmodels/                    # Các lớp xử lý logic nghiệp vụ
-│       │   │── analytics_viewmodel.py     # ViewModel phân tích dữ liệu
-│       │   │── app_viewmodel.py           # ViewModel chính
-│       │   └── prediction_viewmodel.py    # ViewModel dự đoán giá
-│       └── views/                         # Giao diện người dùng
-│           │── about_view.py              # Trang giới thiệu
-│           │── analytics_view.py          # Phân tích dữ liệu
-│           │── app_view.py                # Giao diện chính
-│           │── prediction_view.py         # Giao diện dự đoán
-│── Docs/                                  # Tài liệu và hướng dẫn
+│   └── vn_real_estate_app.py              # Điểm vào chính của ứng dụng
 │── References/                            # Tài liệu tham khảo
 │── .env.example                           # Mẫu cấu hình biến môi trường
 │── run_app.sh                             # Tập lệnh chạy ứng dụng chính (đa nền tảng)
-└── run_demo.sh                            # Tập lệnh chạy ứng dụng demo (đa nền tảng)
 ```
 
 ## Mô tả các thành phần
@@ -99,10 +89,10 @@ Phiên bản demo được xây dựng theo mô hình MVVM với cấu trúc rõ
 Ứng dụng được thiết kế để chạy trên nhiều nền tảng khác nhau (Windows, macOS, Linux) chỉ với một lệnh duy nhất:
 
 ```bash
-./run_demo.sh
+./run_app.sh
 ```
 
-Tập lệnh `run_demo.sh` sẽ tự động thực hiện:
+Tập lệnh `run_app.sh` sẽ tự động thực hiện:
 
 1. Phát hiện hệ điều hành và thiết lập môi trường
 2. Cài đặt các phụ thuộc cần thiết
@@ -158,10 +148,6 @@ Tập lệnh `run_demo.sh` sẽ tự động thực hiện:
 - **Git Bash** (khuyến nghị cho Windows)
 - **Các thư viện Python**: streamlit, pyspark, pandas, numpy, plotly, matplotlib, seaborn, pyngrok, python-dotenv
 
-## 👥 Nhóm phát triển
+## Lời cảm ơn
 
-- **Lê Thị Cẩm Giang** - Tác giả  <https://github.com/lcg1908>
-- **Nguyễn Quỳnh Anh** - Đồng tác giả  <https://github.com/Quynanhng25>
-- **Nguyễn Cao Hoài Duyên** - Đồng tác giả <https://github.com/CaoHoaiDuyen>
-- **Đinh Trương Ngọc Quỳnh Hoa** - Đồng tác giả <https://github.com/QHoa036>
-- **Nguyễn Phương Thảo** - Đồng tác giả <https://github.com/thaonguyenbi>
+Nhóm chúng em xin gửi lời cảm ơn sâu sắc đến thầy Nguyễn Mạnh Tuấn, giảng viên bộ môn Dữ liệu lớn và ứng dụng tại Đại học UEH, vì đã tận tình hướng dẫn, truyền đạt kiến thức và kinh nghiệm quý báu giúp chúng em không chỉ nắm vững lý thuyết mà còn áp dụng vào thực tế. Xin chân thành cảm ơn thầy vì tâm huyết và sự nhiệt tình giúp nhóm hoàn thiện đề tài tốt nhất.
