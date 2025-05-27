@@ -1609,10 +1609,10 @@ elif app_mode == "Về dự án":
                 <ul style="margin-top: 10px; list-style-type: none; padding-left: 0;">
                     <li style="margin-bottom: 20px;">
                         <div style="display: flex; align-items: center;">
-                            <img src="https://github.com/nguyennhuy-0804.png" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; border: 2px solid #4c9aff;">
+                            <img src="https://github.com/lcg1908.png" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; border: 2px solid #4c9aff;">
                             <div>
-                                <strong>Nguyễn Như Ý</strong>
-                                <p style="margin: 0;"><a href="https://github.com/nguyennhuy-0804" style="color: #4c9aff; text-decoration: none;">github.com/nguyennhuy-0804</a></p>
+                                <strong>Lê Thị Cẩm Giang</strong>
+                                <p style="margin: 0;"><a href="https://github.com/lcg1908" style="color: #4c9aff; text-decoration: none;">github.com/lcg1908</a></p>
                             </div>
                         </div>
                     </li>

@@ -1,4 +1,6 @@
-/* MARK: - Fonts & Global Styling */
+/* ====================================
+ * MARK: FONTS & GLOBAL STYLING
+ * ==================================== */
 @import url('https://fonts.googleapis.com/css2?family=Literata:wght@200;300;400;500;600;700;800;900&display=swap&subset=latin,latin-ext,vietnamese');
 
 /* Global font styling */
@@ -11,7 +13,9 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
     font-family: 'Literata', serif !important;
 }
 
-/* MARK: - Sidebar Styling */
+/* ====================================
+ * MARK: SIDEBAR STYLING
+ * ==================================== */
 [data-testid="stSidebar"] {
     background-color: #1a202c;
 }
@@ -43,7 +47,9 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
     font-size: 0.8rem;
 }
 
-/* MARK: - Sidebar Navigation */
+/* ====================================
+ * MARK: SIDEBAR NAVIGATION
+ * ==================================== */
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3,
@@ -57,7 +63,9 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
     color: white !important;
 }
 
-/* MARK: - Tabs Styling */
+/* ====================================
+ * MARK: TABS STYLING
+ * ==================================== */
 .stTabs [data-baseweb="tab-list"] {
     display: flex;
     justify-content: center;
@@ -139,7 +147,9 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
     line-height: 1.6;
 }
 
-/* MARK: - Chart container styling */
+/* ====================================
+ * MARK: CHART CONTAINER STYLING
+ * ==================================== */
 .chart-card {
     background: #1E293B;
     border-radius: 12px;
@@ -237,7 +247,10 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
     }
 }
 
-/* MARK: - About Page Styling */
+/* ====================================
+ * MARK: ABOUT PAGE STYLING
+ * ==================================== */
+
 .about-header {
     text-align: center;
     margin-bottom: 2rem;
@@ -260,7 +273,10 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
     font-size: 1.1rem;
 }
 
-/* Kiểu dáng cho các thẻ thông tin */
+/* ====================================
+ * MARK: ABOUT CARD STYLING
+ * ==================================== */
+
 .about-card {
     background-color: #1E293B;
     border-radius: 8px;
@@ -318,7 +334,10 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
     text-decoration: underline;
 }
 
-/* Kiểu dáng cho các thẻ công nghệ */
+/* ====================================
+ * MARK: TECH TAG STYLING
+ * ==================================== */
+
 .tech-tag {
     display: inline-block;
     background-color: rgba(59, 130, 246, 0.2);
@@ -360,14 +379,20 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
     color: rgba(255, 255, 255, 0.7);
 }
 
-/* MARK: - Sidebar Buttons & Form Controls */
+/* ====================================
+ * MARK: SIDEBAR BUTTONS & FORM CONTROLS
+ * ==================================== */
+
 [data-testid="stSidebar"] button {
     background-color: #2d3748 !important;
     color: white !important;
     border: none !important;
 }
 
-/* MARK: - Streamlit Controls */
+/* ====================================
+ * MARK: STREAMLIT CONTROLS
+ * ==================================== */
+
 /* Tabs styling */
 .stTabs [data-baseweb="tab-list"] {
     gap: 10px;
@@ -403,7 +428,10 @@ h1, h2, h3, h4, h5, h6, .stMarkdown, .stText, button, input, optgroup, select, t
     color: white;
 }
 
-/* MARK: - Metrics Styling */
+/* ====================================
+ * MARK: METRICS STYLING
+ * ==================================== */
+
 /* Basic metrics styling */
 [data-testid="stMetricValue"] {
     color: #4c9aff !important;
@@ -419,7 +447,10 @@ div[data-testid="stMetricLabel"] {
     font-size: 1rem;
 }
 
-/* MARK: - Sidebar Components */
+/* ====================================
+ * MARK: SIDEBAR COMPONENTS
+ * ==================================== */
+
 /* Sidebar metrics styling */
 .sidebar-metric {
     background-color: rgba(255,255,255,0.05);
@@ -447,7 +478,10 @@ div[data-testid="stMetricLabel"] {
     margin-right: 0.5rem;
 }
 
-/* MARK: - Layout & Positioning */
+/* ====================================
+ * MARK: LAYOUT & POSITIONING
+ * ==================================== */
+
 /* Left-aligned title styling */
 .left-aligned-title {
     text-align: left !important;
@@ -479,7 +513,9 @@ div[data-testid="stMetricLabel"] {
     gap: 0.5rem;
 }
 
-/* MARK: - Navigation Buttons */
+/* ====================================
+ * MARK: NAVIGATION BUTTONS
+ * ==================================== */
 
 button[kind="secondary"], button[kind="primary"] {
     width: 100% !important;
@@ -515,8 +551,10 @@ button[kind="primary"] p:last-child, button[kind="secondary"] p:last-child {
     font-weight: 500;
 }
 
-/* MARK: - Block-level Elements */
-/* Specific styling for buttons in vertical blocks */
+/* ====================================
+ * MARK: BLOCK-LEVEL ELEMENTS
+ * ==================================== */
+
 div[data-testid="stVerticalBlock"] button {
     width: 100% !important;
     text-align: center !important;
@@ -541,7 +579,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     margin-right: 0 !important;
 }
 
-/* MARK: - Enhanced Metrics Cards */
+/* ====================================
+ * MARK: ENHANCED METRICS CARDS
+ * ==================================== */
+
 .enhanced-metric-card {
     background: linear-gradient(145deg, rgba(44,82,130,0.5), rgba(26,54,93,0.7));
     border-radius: 10px;
@@ -562,7 +603,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     box-shadow: 0 6px 8px rgba(0,0,0,0.15);
 }
 
-/* MARK: - Metric Components */
+/* ====================================
+ * MARK: METRIC COMPONENTS
+ * ==================================== */
+
 .metric-header {
     display: flex !important;
     align-items: center !important;
@@ -606,7 +650,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     padding: 0.3rem;
 }
 
-/* Enhanced metrics card styles */
+/* ====================================
+ * MARK: ENHANCED METRICS CARD
+ * ==================================== */
+
 .enhanced-metric-card {
     padding: 10px !important;
     margin: 5px 0 !important;
@@ -615,7 +662,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     transition: all 0.3s ease !important;
 }
 
-/* MARK: - Color Variations */
+/* ====================================
+ * MARK: COLOR VARIATIONS
+ * ==================================== */
+
 /* Color variations for metrics cards */
 .blue-gradient {
     background: linear-gradient(145deg, rgba(51,97,255,0.3), rgba(29,55,147,0.5)) !important;
@@ -635,7 +685,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     border: 1px solid rgba(76,255,154,0.3) !important;
 }
 
-/* MARK: - Icon Background Colors */
+/* ====================================
+ * MARK: ICON BACKGROUND COLORS
+ * ==================================== */
+
 /* Specific icon background colors */
 .blue-icon-bg {
     background-color: rgba(100,149,237,0.2) !important;
@@ -649,7 +702,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     background-color: rgba(76,255,154,0.2) !important;
 }
 
-/* MARK: - Value Colors */
+/* ====================================
+ * MARK: VALUE COLORS
+ * ==================================== */
+
 /* Specific value colors */
 .blue-value {
     color: #84a9ff !important;
@@ -663,7 +719,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     color: #4dff9e !important;
 }
 
-/* MARK: - Metric Value Styling */
+/* ====================================
+ * MARK: METRIC VALUE STYLING
+ * ==================================== */
+
 /* Consistent metric value styling */
 .clean-metric-value {
     font-size: 1.5rem !important;
@@ -682,7 +741,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     margin-right: 0.5rem;
 }
 
-/* MARK: - Input Cards */
+/* ====================================
+ * MARK: INPUT CARDS
+ * ==================================== */
+
 .input-card {
     background-color: #1e1e1e;
     border-radius: 10px;
@@ -698,7 +760,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     border-color: #444;
 }
 
-/* MARK: - Card Header Components */
+/* ====================================
+ * MARK: CARD HEADER COMPONENTS
+ * ==================================== */
+
 .card-header {
     align-items: center;
     display: flex;
@@ -733,7 +798,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     font-weight: 600;
 }
 
-/* MARK: - Form Controls */
+/* ====================================
+ * MARK: FORM CONTROLS
+ * ==================================== */
+
 .stSelectbox label, .stNumberInput label {
     font-weight: 500;
     color: #ccc !important;
@@ -785,7 +853,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     min-height: 38px !important;
 }
 
-/* MARK: - Flex Containers */
+/* ====================================
+ * MARK: FLEX CONTAINERS
+ * ==================================== */
+
 .flex-container {
     display: flex;
     align-items: center;
@@ -797,7 +868,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     margin-top: 0.5rem;
 }
 
-/* MARK: - Utility Classes */
+/* ====================================
+ * MARK: UTILITY CLASSES
+ * ==================================== */
+
 .spacer-24 {
     height: 24px;
 }
@@ -806,7 +880,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     opacity: 0.2;
 }
 
-/* MARK: - Modern Header */
+/* ====================================
+ * MARK: MODERN HEADER
+ * ==================================== */
+
 .modern-header {
     background: linear-gradient(to right, rgba(30, 30, 30, 0.9), rgba(45, 45, 45, 0.8));
     border-radius: 12px;
@@ -867,7 +944,10 @@ div[data-testid="stVerticalBlock"] button > div:first-child > p {
     border-radius: 8px;
 }
 
-/* MARK: - Tertiary Buttons */
+/* ====================================
+ * MARK: TERTIARY BUTTONS
+ * ==================================== */
+
 .stButton > button[kind="tertiary"],
 div[data-testid="StyledFullScreenButton"] button[kind="tertiary"],
 div button[kind="tertiary"] {
@@ -902,7 +982,10 @@ div button[kind="tertiary"]:focus {
     outline: none !important;
 }
 
-/* MARK: - Result Container */
+/* ====================================
+ * MARK: RESULT CONTAINER
+ * ==================================== */
+
 .result-container {
     background: linear-gradient(to right, rgba(25, 26, 36, 0.8), rgba(30, 32, 45, 0.9));
     border-radius: 12px;
@@ -965,7 +1048,10 @@ div button[kind="tertiary"]:focus {
     letter-spacing: 0.5px;
 }
 
-/* MARK: - Similar Properties */
+/* ====================================
+ * MARK: SIMILAR PROPERTIES
+ * ==================================== */
+
 .similar-container {
     margin-top: 30px;
 }
@@ -1004,7 +1090,10 @@ div button[kind="tertiary"]:focus {
     margin: 10px 0;
 }
 
-/* MARK: - About Project Page */
+/* ====================================
+ * MARK: ABOUT PROJECT PAGE
+ * ==================================== */
+
 .about-header {
     display: flex;
     align-items: center;
@@ -1148,7 +1237,11 @@ div button[kind="tertiary"]:focus {
     font-weight: bold;
     color: white;
 }
-/* CSS cho dòng thống kê */
+
+/* ====================================
+ * MARK: STATISTICS ROW
+ * ==================================== */
+
 .stats-row {
     display: flex;
     justify-content: space-between;

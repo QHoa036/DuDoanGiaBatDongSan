@@ -1,5 +1,8 @@
 # File requirements.txt cho dự án Dự đoán giá bất động sản Việt Nam
 
+# Apache Spark
+pyspark>=3.4.0
+
 # Web scraping và tự động hóa
 selenium>=4.12.0
 webdriver-manager>=4.0.0
