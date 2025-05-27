@@ -14,6 +14,8 @@ Lớp ViewModel chính điều phối các hoạt động của ứng dụng, ba
 # MARK: - Thư viện
 
 import os
+import sys
+import pandas as pd
 import streamlit as st
 from typing import Dict, List, Optional
 
@@ -23,7 +25,8 @@ from .analytics_viewmodel import AnalyticsViewModel
 from ..utils.ngrok_utils import check_ngrok_status, run_ngrok
 from ..utils.logger_utils import get_logger, log_execution_time
 from ..utils.session_utils import initialize_session
-from ..services.data_service import DataService
+from ..services.core.services_factory import ServicesFactory
+from ..services.interfaces import IProgressDataService, ITrainModelService, IPredictionService
 
 # MARK: - Lớp chính
 
@@ -39,22 +42,24 @@ class AppViewModel:
         # Logger
         self.logger = get_logger(__name__)
 
-        # Khởi tạo dịch vụ dữ liệu
-        self._data_service = DataService()
+        # Khởi tạo các dịch vụ sử dụng Factory Pattern
+        self._data_service = ServicesFactory.get_progress_data_service()
+        self._model_service = ServicesFactory.get_train_model_service()
+        self._prediction_service = ServicesFactory.get_prediction_service()
 
         # Khởi tạo các ViewModel con
-        self._prediction_vm = PredictionViewModel(self._data_service)
-        self._analytics_vm = AnalyticsViewModel(self._data_service)
+        self._prediction_vm = PredictionViewModel(_data_service=self._data_service, _model_service=self._model_service, prediction_service=self._prediction_service)
+        self._analytics_vm = AnalyticsViewModel(_data_service=self._data_service, _model_service=self._model_service)
 
         # Khởi tạo trạng thái ứng dụng
         if 'app_mode' not in st.session_state:
-            st.session_state.app_mode = "Dự đoán giá"
+            st.session_state.app_mode = "Dự đoán"
 
         # Khởi tạo các biến session state cho metrics
         initialize_session()
 
         # Quản lý các trang
-        self._app_modes = ["Dự đoán giá", "Trực quan hóa", "Về dự án"]
+        self._app_modes = ["Dự đoán", "Trực quan hóa", "Về dự án"]
 
     # MARK: - Thuộc tính
 
@@ -73,11 +78,25 @@ class AppViewModel:
         return self._analytics_vm
 
     @property
-    def data_service(self) -> DataService:
+    def data_service(self) -> IProgressDataService:
         """
         Dịch vụ dữ liệu
         """
         return self._data_service
+
+    @property
+    def model_service(self) -> ITrainModelService:
+        """
+        Dịch vụ huấn luyện mô hình
+        """
+        return self._model_service
+
+    @property
+    def prediction_service(self) -> IPredictionService:
+        """
+        Dịch vụ dự đoán giá bất động sản
+        """
+        return self._prediction_service
 
     @property
     def app_modes(self) -> List[str]:
@@ -109,30 +128,40 @@ class AppViewModel:
         Khởi tạo ứng dụng bằng cách tải dữ liệu và chuẩn bị các mô hình
         """
         try:
-            # Tải dữ liệu
+            # Tải dữ liệu sử dụng dịch vụ dữ liệu
+            self.logger.info("Bắt đầu tải dữ liệu...")
             data = self._data_service.load_data()
 
             # Tiền xử lý dữ liệu
+            self.logger.info("Tiền xử lý dữ liệu...")
             preprocessed_data = self._data_service.preprocess_data(data)
 
+            # Kiểm tra dữ liệu đã tải
+            data_info = self._data_service.data_info
+            self.logger.info(f"Tải dữ liệu hoàn tất: {data_info.get('rows', 0)} dòng, {len(data_info.get('columns', []))} cột")
+
             # Chuyển đổi sang Spark DataFrame
+            self.logger.info("Chuyển đổi dữ liệu sang Spark DataFrame...")
             spark_df = self._data_service.convert_to_spark(preprocessed_data)
 
             # Huấn luyện mô hình
-            if spark_df is not None:
-                # Nếu Spark khả dụng, sử dụng Spark DataFrame
-                self._data_service.train_model(spark_df)
-                self.logger.info("Đã huấn luyện mô hình với Spark")
-            else:
-                # Fallback: Sử dụng scikit-learn nếu Spark không khả dụng
-                self.logger.warning("Không thể khởi tạo Spark DataFrame, sử dụng scikit-learn fallback")
-                self._data_service.train_model(None)  # Truyền None sẽ kích hoạt fallback
+            self.logger.info("Bắt đầu huấn luyện mô hình...")
+
+            # Huấn luyện mô hình với Spark hoặc fallback tùy theo tình hình
+            self._model_service.train_model(spark_df if spark_df is not None else None)
+
+            # Factory sẽ tự động cập nhật mô hình cho dịch vụ dự đoán khi tạo lại instance
+            # Cập nhật dịch vụ dự đoán với instance mới nếu cần
+            self._prediction_service = ServicesFactory.get_prediction_service()
 
             # Hiển thị thông tin metrics
-            metrics = self._data_service.model_metrics
+            metrics = self._model_service.model_metrics
             if metrics:
                 for name, value in metrics.items():
-                    self.logger.info(f"Chỉ số {name}: {value:.4f}")
+                    if isinstance(value, (float, int)):
+                        self.logger.info(f"Chỉ số {name}: {value:.4f}")
+                    else:
+                        self.logger.info(f"Chỉ số {name}: {value}")
 
             self.logger.info("Khởi tạo ứng dụng hoàn tất")
 
@@ -143,11 +172,34 @@ class AppViewModel:
     def get_model_metrics(self) -> Dict[str, float]:
         """
         Lấy các chỉ số của mô hình hiện tại
-
-        Trả về:
-            Dict[str, float]: Các chỉ số mô hình
         """
-        return self._data_service.model_metrics
+        return self._model_service.model_metrics
+
+    @log_execution_time
+    def process_raw_data(self, file_path: str) -> Optional[pd.DataFrame]:
+        """
+        Xử lý dữ liệu thô từ file CSV
+        """
+        try:
+            self.logger.info(f"Bắt đầu xử lý dữ liệu thô từ: {file_path}")
+
+            # Gọi phương thức process_raw_data của ProgressDataService
+            processed_data = self._data_service.process_raw_data(file_path)
+
+            if processed_data is not None:
+                self.logger.info(f"Xử lý dữ liệu thô thành công: {len(processed_data)} dòng")
+
+                # Sau khi xử lý xong, khởi tạo lại ứng dụng để sử dụng dữ liệu mới
+                self.initialize_app()
+
+                return processed_data
+            else:
+                self.logger.error("Xử lý dữ liệu thô thất bại")
+                return None
+
+        except Exception as e:
+            self.logger.error(f"Lỗi khi xử lý dữ liệu thô: {str(e)}", exc_info=True)
+            return None
 
     # MARK: - Kết nối Ngrok
 
@@ -155,9 +207,6 @@ class AppViewModel:
     def setup_ngrok(self) -> Optional[str]:
         """
         Thiết lập Ngrok để tạo URL công khai cho ứng dụng
-
-        Trả về:
-            Optional[str]: URL công khai nếu thành công, None nếu thất bại
         """
         # Lấy path thư mục utils
         utils_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'utils')

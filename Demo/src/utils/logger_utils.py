@@ -8,6 +8,7 @@ Mô-đun này cung cấp một hệ thống ghi log toàn diện với:
 - Ghi log ra file và console với định dạng tùy chỉnh
 - Tích hợp với Streamlit để hiển thị log trong giao diện người dùng
 - Hỗ trợ đa nền tảng
+- Theo dõi metrics và hiệu suất của mô hình
 """
 
 import os
@@ -15,11 +16,12 @@ import logging
 import sys
 import time
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Any, Optional, Callable
 import streamlit as st
 import functools
 import inspect
 import threading
+import json
 
 # MARK: - Màu sắc cho logger
 
@@ -369,3 +371,109 @@ def configure_root_logger(level=logging.INFO, log_file=None, enable_streamlit=Fa
     logging.root = root_logger
 
     return root_logger
+
+# MARK: - Theo dõi metrics và hiệu suất
+
+class MetricsLogger:
+    """
+    Lớp tiện ích để theo dõi metrics và hiệu suất của mô hình
+    """
+    def __init__(self, name: str, metrics_service=None):
+        """
+        Khởi tạo logger cho metrics
+        """
+        self.logger = get_logger(f"metrics.{name}")
+        self.metrics_service = metrics_service
+        self.name = name
+        self._history = {}
+
+    def log_training_metrics(self, metrics: Dict[str, float], model_name: str):
+        """
+        Ghi lại các metrics trong quá trình huấn luyện mô hình
+        """
+        metrics_str = ", ".join([f"{k}={v:.4f}" for k, v in metrics.items()])
+        self.logger.info(f"Mô hình {model_name} - Metrics: {metrics_str}")
+
+        # Lưu vào metrics service nếu có
+        if self.metrics_service:
+            self.metrics_service.add_metrics(model_name, metrics)
+
+        # Lưu vào lịch sử nội bộ
+        if model_name not in self._history:
+            self._history[model_name] = {}
+
+        for metric_name, value in metrics.items():
+            if metric_name not in self._history[model_name]:
+                self._history[model_name][metric_name] = []
+            self._history[model_name][metric_name].append(value)
+
+    def log_prediction(self, input_data: Dict[str, Any], prediction: float, confidence: Optional[float] = None):
+        """
+        Ghi lại thông tin về một dự đoán
+        """
+        msg = f"Dự đoán: {prediction:.2f}"
+        if confidence:
+            msg += f", Độ tin cậy: {confidence:.2f}"
+
+        # Ghi log chi tiết ở cấp độ debug
+        self.logger.debug(f"Input: {input_data}, {msg}")
+
+        # Ghi log tổng quan ở cấp độ info
+        self.logger.info(msg)
+
+    def log_performance(self, operation: str, duration_ms: float):
+        """
+        Ghi lại hiệu suất của một thao tác
+        """
+        self.logger.info(f"Hiệu suất - {operation}: {duration_ms:.2f}ms")
+
+        # Lưu vào metrics service nếu có
+        if self.metrics_service:
+            perf_metrics = {f"perf_{operation}": duration_ms}
+            self.metrics_service.add_metrics(f"{self.name}_performance", perf_metrics)
+
+    def timing_decorator(self, func):
+        """
+        Decorator để đo thời gian thực thi của một hàm
+
+        Usage:
+            @metrics_logger.timing_decorator
+            def my_function():
+                pass
+        """
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            result = func(*args, **kwargs)
+            end_time = time.time()
+
+            duration_ms = (end_time - start_time) * 1000
+            self.log_performance(func.__name__, duration_ms)
+
+            return result
+        return wrapper
+
+
+# Tiện ích để lấy timestamp định dạng chuẩn
+def get_timestamp() -> str:
+    """
+    Lấy timestamp hiện tại theo định dạng chuẩn
+    """
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+# Tiện ích để format thời gian
+def format_duration(milliseconds: float) -> str:
+    """
+    Format thời gian thực thi thành chuỗi dễ đọc
+    """
+    if milliseconds < 1000:
+        return f"{milliseconds:.2f}ms"
+
+    seconds = milliseconds / 1000
+    if seconds < 60:
+        return f"{seconds:.2f}s"
+
+    minutes = seconds / 60
+    seconds_remainder = seconds % 60
+    return f"{int(minutes)}m {seconds_remainder:.2f}s"

@@ -8,7 +8,9 @@ import streamlit as st
 import pandas as pd
 from typing import Dict, Any, Tuple
 
-from ..services.data_service import DataService
+from ..services.progress_data_service import ProgressDataService
+from ..services.train_model_service import TrainModelService
+from ..services.prediction_service import PredictionService
 from ..models.property_model import Property, PredictionResult
 from ..utils.session_utils import save_model_metrics, get_model_metrics
 
@@ -19,11 +21,15 @@ class PredictionViewModel:
     ViewModel cho chức năng dự đoán giá bất động sản
     Xử lý tương tác giữa View và Model
     """
-    def __init__(self, data_service: DataService):
+    def __init__(self, _data_service: ProgressDataService, _model_service: TrainModelService, prediction_service: PredictionService = None):
         """
-        Khởi tạo ViewModel với dịch vụ dữ liệu
+        Khởi tạo ViewModel với dịch vụ dữ liệu, huấn luyện mô hình và dự đoán
         """
-        self._data_service = data_service
+        self._data_service = _data_service
+        self._model_service = _model_service
+
+        # Sử dụng dịch vụ dự đoán nếu được cung cấp
+        self._prediction_service = prediction_service
 
         # Khởi tạo các biến trạng thái
         if 'prediction_result' not in st.session_state:
@@ -41,8 +47,12 @@ class PredictionViewModel:
         # Chuyển đổi dữ liệu đầu vào thành đối tượng Property
         property_data = Property.from_dict(input_data)
 
-        # Thực hiện dự đoán sử dụng dịch vụ dữ liệu
-        result = self._data_service.predict_property_price(property_data)
+        # Sử dụng dịch vụ dự đoán nếu có, nếu không thì dùng dịch vụ mô hình
+        if self._prediction_service is not None:
+            result = self._prediction_service.predict_property_price(property_data)
+        else:
+            # Fallback nếu không có dịch vụ dự đoán
+            result = self._model_service.predict_property_price(property_data)
 
         # Lưu kết quả trong session state để truy cập sau này
         st.session_state.prediction_result = result
@@ -129,8 +139,8 @@ class PredictionViewModel:
                 'rmse': session_metrics.get('rmse', 0.0)
             }
 
-        # Nếu không, lấy từ data service và lưu vào session state
-        service_metrics = self._data_service.model_metrics
+        # Nếu không, get from model service
+        service_metrics = self._model_service.model_metrics
 
         if service_metrics:
             # Lưu metrics vào session state để duy trì giữa các views

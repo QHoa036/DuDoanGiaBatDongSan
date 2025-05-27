@@ -5,6 +5,7 @@ App View - Giao diện chính của ứng dụng
 """
 
 import streamlit as st
+
 from .prediction_view import PredictionView
 from .analytics_view import AnalyticsView
 from .about_view import AboutView
@@ -20,19 +21,16 @@ class AppView:
     def __init__(self, viewmodel: AppViewModel):
         """
         Khởi tạo giao diện ứng dụng
-
-        Tham số:
-            viewmodel: ViewModel để điều phối ứng dụng
         """
-
         self._viewmodel = viewmodel
         self._prediction_view = PredictionView(viewmodel.prediction_viewmodel)
         self._analytics_view = AnalyticsView(viewmodel.analytics_viewmodel)
         self._about_view = AboutView()
 
     def render(self) -> None:
-        """Hiển thị giao diện chính của ứng dụng"""
-
+        """
+        Hiển thị giao diện chính của ứng dụng
+        """
         # Khởi tạo styles và cấu hình trang
         initialize_styles()
 
@@ -47,7 +45,7 @@ class AppView:
 
         if current_mode == "Dự đoán":
             self._prediction_view.render()
-        elif current_mode == "Thống kê":
+        elif current_mode == "Trực quan hóa":
             self._analytics_view.render()
         elif current_mode == "Về dự án":
             self._about_view.render()
@@ -55,10 +53,13 @@ class AppView:
     # MARK: - Sidebar
 
     def _render_sidebar(self) -> None:
-        """Hiển thị thanh bên với các thông số mô hình và hành động"""
-
+        """
+        Hiển thị thanh bên với các thông số mô hình và hành động
+        """
         # Lấy thông số mô hình
         metrics = self._viewmodel.get_model_metrics()
+        r2score = metrics.get("r2", 0.0)
+        rmse = metrics.get("rmse", 0.0)
 
         # Hiển thị thông số mô hình
         st.sidebar.markdown('<div class="model-stats-container"><div class="metric-header"><div class="metric-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 16V8.00002C20.9996 7.6493 20.9071 7.30483 20.7315 7.00119C20.556 6.69754 20.3037 6.44539 20 6.27002L13 2.27002C12.696 2.09449 12.3511 2.00208 12 2.00208C11.6489 2.00208 11.304 2.09449 11 2.27002L4 6.27002C3.69626 6.44539 3.44398 6.69754 3.26846 7.00119C3.09294 7.30483 3.00036 7.6493 3 8.00002V16C3.00036 16.3508 3.09294 16.6952 3.26846 16.9989C3.44398 17.3025 3.69626 17.5547 4 17.73L11 21.73C11.304 21.9056 11.6489 21.998 12 21.998C12.3511 21.998 12.696 21.9056 13 21.73L20 17.73C20.3037 17.5547 20.556 17.3025 20.7315 16.9989C20.9071 16.6952 20.9996 16.3508 21 16Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="metric-title">Thông số mô hình</span></div>', unsafe_allow_html=True)
@@ -76,9 +77,9 @@ class AppView:
                 </div>
                 <span class="metric-title">Độ chính xác (R²)</span>
             </div>
-            <div class="clean-metric-value blue-value">{accuracy:.4f}</div>
+            <div class="clean-metric-value blue-value">{r2score:.4f}</div>
         </div>
-        """.format(accuracy=metrics.get('accuracy', 0)), unsafe_allow_html=True)
+        """.format(r2score=r2score), unsafe_allow_html=True)
 
         st.sidebar.markdown("""<div class="spacer-20"></div>""", unsafe_allow_html=True)
 
@@ -96,20 +97,12 @@ class AppView:
             </div>
             <div class="clean-metric-value purple-value">{rmse:.4f}</div>
         </div>
-        """.format(rmse=metrics.get('rmse', 0)), unsafe_allow_html=True)
+        """.format(rmse=rmse), unsafe_allow_html=True)
 
         # MARK: - Footer
+
         st.sidebar.markdown("""<hr class="hr-divider">""", unsafe_allow_html=True)
         st.sidebar.markdown("""
-        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="info-icon">
-                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M12 16V12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M12 8H12.01" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>Dự đoán giá BĐS Việt Nam</span>
-        </div>
-
         <div class="flex-container">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="info-icon">
                 <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -120,10 +113,9 @@ class AppView:
         """, unsafe_allow_html=True)
 
     def _render_navigation(self) -> None:
-        """Hiển thị menu điều hướng"""
-
-        # MARK: - Header
-
+        """
+        Hiển thị menu điều hướng
+        """
         st.sidebar.markdown("""
         <div class="sidebar-header">
             <img src="https://img.icons8.com/fluency/96/000000/home.png" alt="Logo">
@@ -132,8 +124,6 @@ class AppView:
             <p>Nhóm 05</p>
         </div>
         """, unsafe_allow_html=True)
-
-        # MARK: - Menu điều hướng
 
         # Lấy danh sách các chế độ ứng dụng
         app_modes = self._viewmodel.app_modes
@@ -152,8 +142,5 @@ class AppView:
     def _handle_navigation(self, mode: str) -> None:
         """
         Xử lý điều hướng đến một giao diện khác
-
-        Tham số:
-            mode: Chế độ ứng dụng mới
         """
         self._viewmodel.set_app_mode(mode)

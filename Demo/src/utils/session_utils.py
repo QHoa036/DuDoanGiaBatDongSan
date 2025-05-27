@@ -13,10 +13,6 @@ from typing import Dict, Any, Optional
 def save_model_metrics(r2: float, rmse: float) -> None:
     """
     Lưu các metrics của mô hình vào session state để duy trì qua các views khác nhau
-
-    Tham số:
-        r2: Hệ số xác định (R-squared)
-        rmse: Root Mean Squared Error
     """
     st.session_state.model_metrics = {
         "r2": r2,
@@ -27,9 +23,6 @@ def save_model_metrics(r2: float, rmse: float) -> None:
 def get_model_metrics() -> Dict[str, float]:
     """
     Lấy các metrics của mô hình từ session state
-
-    Trả về:
-        Dict[str, float]: Dictionary chứa r2 và rmse
     """
     if "model_metrics" not in st.session_state:
         return {"r2": 0.0, "rmse": 0.0, "timestamp": 0}
@@ -39,9 +32,6 @@ def get_model_metrics() -> Dict[str, float]:
 def metrics_exist() -> bool:
     """
     Kiểm tra xem metrics đã được lưu trong session state chưa
-
-    Trả về:
-        bool: True nếu metrics đã tồn tại, False nếu chưa
     """
     return "model_metrics" in st.session_state
 
@@ -50,18 +40,12 @@ def metrics_exist() -> bool:
 def save_prediction_result(prediction_data: Dict[str, Any]) -> None:
     """
     Lưu kết quả dự đoán vào session state
-
-    Tham số:
-        prediction_data: Dữ liệu kết quả dự đoán
     """
     st.session_state.prediction_results = prediction_data
 
 def get_prediction_result() -> Optional[Dict[str, Any]]:
     """
     Lấy kết quả dự đoán từ session state
-
-    Trả về:
-        Optional[Dict[str, Any]]: Dữ liệu kết quả dự đoán hoặc None nếu không có
     """
     if "prediction_results" not in st.session_state:
         return None

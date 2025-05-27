@@ -7,7 +7,8 @@ ViewModel Phân tích - Xử lý logic cho giao diện phân tích dữ liệu
 import pandas as pd
 from typing import Dict, Any
 
-from ..services.data_service import DataService
+from ..services.progress_data_service import ProgressDataService
+from ..services.train_model_service import TrainModelService
 from ..utils.session_utils import get_model_metrics, save_model_metrics
 
 # MARK: - Lớp ViewModel Phân tích
@@ -18,11 +19,12 @@ class AnalyticsViewModel:
     Xử lý tương tác giữa View Phân tích Dữ liệu và Model
     """
 
-    def __init__(self, data_service: DataService):
+    def __init__(self, _data_service: ProgressDataService, _model_service: TrainModelService):
         """
-        Khởi tạo ViewModel với dịch vụ dữ liệu
+        Khởi tạo ViewModel với dịch vụ dữ liệu và huấn luyện mô hình
         """
-        self._data_service = data_service
+        self._data_service = _data_service
+        self._model_service = _model_service
 
     # MARK: - Phương thức tải dữ liệu
 
@@ -53,8 +55,8 @@ class AnalyticsViewModel:
                 'accuracy': session_metrics.get('r2', 0.0)  # For backward compatibility
             }
 
-        # Nếu không, lấy từ data service và lưu vào session state
-        service_metrics = self._data_service.model_metrics
+        # Nếu không, lấy từ model service và lưu vào session state
+        service_metrics = self._model_service.model_metrics
 
         if service_metrics:
             # Lưu metrics vào session state để duy trì giữa các views
@@ -73,7 +75,7 @@ class AnalyticsViewModel:
         """
         Lấy mức độ quan trọng của các đặc trưng từ mô hình
         """
-        return self._data_service.get_feature_importance()
+        return self._model_service.get_feature_importance()
 
     # MARK: - Helper Functions
 
