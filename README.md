@@ -2,6 +2,15 @@
 
 > **MÔN HỌC**: DỮ LIỆU LỚN VÀ ỨNG DỤNG
 
+## Nhóm phát triển
+
+- **Lê Thị Cẩm Giang** - Tác giả  <https://github.com/lcg1908>
+- **Nguyễn Quỳnh Anh** - Đồng tác giả  <https://github.com/Quynanhng25>
+- **Nguyễn Cao Hoài Duyên** - Đồng tác giả <https://github.com/CaoHoaiDuyen>
+- **Đinh Trương Ngọc Quỳnh Hoa** - Đồng tác giả <https://github.com/QHoa036>
+- **Trần Hoàng Nghĩa** - Đồng tác giả <https://github.com/Blink713>
+- **Nguyễn Phương Thảo** - Đồng tác giả <https://github.com/thaonguyenbi>
+
 ## Tổng quan
 
 Ứng dụng Dự đoán giá Bất động sản Việt Nam là một nền tảng hiện đại kết hợp công nghệ PySpark, học máy và Streamlit để cung cấp:
@@ -10,36 +19,6 @@
 - **Phân tích thị trường** với giao diện trực quan, hiện đại và tương tác
 - **Xu hướng giá** theo khu vực, thời gian và các yếu tố ảnh hưởng
 - **Trải nghiệm người dùng** đa nền tảng và dễ sử dụng
-
-Ứng dụng được thiết kế theo kiến trúc MVVM (Model-View-ViewModel), đảm bảo tính mô-đun, dễ bảo trì và mở rộng.
-
-## Tính năng chính
-
-### 1. Dự đoán giá bất động sản
-
-- Nhập thông tin bất động sản và nhận dự đoán giá trị ngay lập tức
-- Hiển thị khoảng tin cậy dự đoán và độ chính xác của mô hình
-- Hỗ trợ nhiều loại bất động sản: căn hộ, nhà phố, biệt thự, đất nền
-
-### 2. Phân tích dữ liệu hiện đại
-
-- **Thẻ thống kê (KPI cards)** hiển thị giá trung bình, giá/m², số lượng BĐS, % biến động
-- **Biểu đồ tương tác** cho phép phân tích theo nhiều chiều dữ liệu
-- **Phân tích tương quan** giữa các đặc điểm và giá bất động sản
-- **Hiển thị tên đặc điểm bằng tiếng Việt** thay vì tên cột kỹ thuật
-
-### 3. Bảng điều khiển thống kê (Dashboard)
-
-- Biểu đồ xu hướng giá theo thời gian
-- Top khu vực có giá cao nhất/thấp nhất
-- Phân phối giá theo loại bất động sản
-- Năm có biến động giá lớn nhất
-
-### 4. Tính năng nâng cao
-
-- **Hỗ trợ đa nền tảng**: Windows, macOS và Linux
-- **Tích hợp Ngrok** để chia sẻ ứng dụng qua URL công khai
-- **Hệ thống nhật ký** toàn diện với nhiều cấp độ và giao diện quản lý
 
 ## Cấu trúc dự án
 
@@ -91,22 +70,6 @@ Script này sẽ tự động:
 3. Nhập authtoken vào file env.local
 4. Chọn 'y' khi được hỏi về việc sử dụng Ngrok
 
-## Kiến trúc ứng dụng
-
-### Cải tiến và tối ưu hóa
-
-- **Streamlit Cache**: Tối ưu hóa với quy ước tham số có dấu gạch dưới (_) giúp tránh lỗi khi caching các đối tượng phức tạp
-- **Dashboard hiện đại**: Giao diện trực quan với các thẻ thống kê, gradient background, và biểu đồ tương tác
-- **Tên đặc điểm tiếng Việt**: Hiển thị các đặc điểm bằng tiếng Việt thay vì tên cột kỹ thuật
-
-## Nhóm phát triển
-
-- **Lê Thị Cẩm Giang** - Tác giả  <https://github.com/lcg1908>
-- **Nguyễn Quỳnh Anh** - Đồng tác giả  <https://github.com/Quynanhng25>
-- **Nguyễn Cao Hoài Duyên** - Đồng tác giả <https://github.com/CaoHoaiDuyen>
-- **Đinh Trương Ngọc Quỳnh Hoa** - Đồng tác giả <https://github.com/QHoa036>
-- **Trần Hoàng Nghĩa** - Đồng tác giả <https://github.com/Blink713>
-- **Nguyễn Phương Thảo** - Đồng tác giả <https://github.com/thaonguyenbi>
 
 ## Thư viện chính
 
