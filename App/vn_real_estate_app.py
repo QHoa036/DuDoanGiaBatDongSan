@@ -17,7 +17,7 @@ if app_src_path not in sys.path:
     sys.path.append(app_src_path)
 
 # Bây giờ có thể import từ thư mục src
-from utils.spark_utils import get_spark_session, configure_spark_logging
+from src.utils.spark_utils import get_spark_session, configure_spark_logging
 
 # Import thư viện Spark
 from pyspark.ml.feature import VectorAssembler, StandardScaler
@@ -398,14 +398,20 @@ def predict_price(model, input_data):
 
         # Đảm bảo tên cột đúng định dạng
         if 'area' in input_df.columns and 'area (m2)' not in input_df.columns:
+            # Xử lý chuỗi rỗng cho trường area
+            input_df['area'] = input_df['area'].apply(lambda x: 0 if x == '' else x)
             input_df['area (m2)'] = input_df['area']
 
         if 'street' in input_df.columns and 'street (m)' not in input_df.columns:
+            # Xử lý chuỗi rỗng cho trường street
+            input_df['street'] = input_df['street'].apply(lambda x: 0 if x == '' else x)
             input_df['street (m)'] = input_df['street']
 
         # Xử lý các giá trị số
         for col in input_df.columns:
             if col in ["bedroom_num", "floor_num", "toilet_num", "livingroom_num"]:
+                # Xử lý trường hợp chuỗi rỗng trước khi chuyển đổi sang kiểu số
+                input_df[col] = input_df[col].apply(lambda x: -1 if x == '' else x)
                 input_df[col] = input_df[col].fillna(-1).astype(int)
 
         # Xử lý dữ liệu thiếu cho các trường số
@@ -450,8 +456,6 @@ def predict_price(model, input_data):
                 st.warning(f"Lỗi khi dự đoán với Spark: {e}. Sử dụng phương pháp dự phòng.")
                 return fallback_prediction(input_data, st.session_state.data)
         else:
-            # Spark không khả dụng, sử dụng phương pháp dự phòng
-            st.warning("Spark không khả dụng. Đang sử dụng phương pháp dự phòng để dự đoán giá.")
             return fallback_prediction(input_data, st.session_state.data)
 
     except Exception as e:
@@ -476,14 +480,20 @@ def fallback_prediction(input_data, data):
 
             # Đảm bảo tên cột đúng định dạng
             if 'area' in input_df.columns and 'area (m2)' not in input_df.columns:
+                # Xử lý chuỗi rỗng cho trường area
+                input_df['area'] = input_df['area'].apply(lambda x: 0 if x == '' else x)
                 input_df['area (m2)'] = input_df['area']
 
             if 'street' in input_df.columns and 'street (m)' not in input_df.columns:
+                # Xử lý chuỗi rỗng cho trường street
+                input_df['street'] = input_df['street'].apply(lambda x: 0 if x == '' else x)
                 input_df['street (m)'] = input_df['street']
 
             # Xử lý các giá trị số
             for col in input_df.columns:
                 if col in ["bedroom_num", "floor_num", "toilet_num", "livingroom_num"]:
+                    # Xử lý trường hợp chuỗi rỗng trước khi chuyển đổi sang kiểu số
+                    input_df[col] = input_df[col].apply(lambda x: -1 if x == '' else x)
                     input_df[col] = input_df[col].fillna(-1).astype(int)
 
             # Đảm bảo tất cả các cột cần thiết đều có
@@ -496,13 +506,70 @@ def fallback_prediction(input_data, data):
                     else:  # Nếu là cột phân loại, điền giá trị rỗng
                         input_df[col] = ''
 
+            # Xử lý toàn bộ các cột có thể chứa giá trị số - Xử lý TRIỆT ĐỂ chuỗi rỗng
+            numeric_columns = [
+                "area", "area (m2)", "street", "street (m)",
+                "bedroom_num", "floor_num", "toilet_num", "livingroom_num",
+                "longitude", "latitude", "built_year", "price_per_m2"
+            ]
+
+            # Xử lý chuỗi rỗng và chuyển đổi kiểu dữ liệu cho mội cột
+            for col in input_df.columns:
+                # Đối với các cột số, thay thế chuỗi rỗng bằng giá trị mặc định
+                if any(num_col in col for num_col in numeric_columns):
+                    # Thay thế chuỗi rỗng bằng 0 hoặc -1 tùy vào loại cột
+                    default_value = -1 if col in ["bedroom_num", "floor_num", "toilet_num", "livingroom_num"] else 0
+                    input_df[col] = input_df[col].apply(lambda x: default_value if x == '' else x)
+
+                    # Đảm bảo được chuyển đổi kiểu số đúng
+                    if col in ["bedroom_num", "floor_num", "toilet_num", "livingroom_num"]:
+                        input_df[col] = input_df[col].astype(int, errors='ignore')
+                    else:
+                        input_df[col] = input_df[col].astype(float, errors='ignore')
+
             # Nếu có preprocessor, sử dụng nó
             model = st.session_state.model
 
             # Nếu model là một pipeline, sử dụng predict trực tiếp
             if hasattr(model, 'predict'):
+                # Xử lý lần cuối và CHUẨN HÓA KIỂU DỮ LIỆU một cách nghiêm ngặt
+                # Các cột được xác định rõ ràng về kiểu dữ liệu
+                numeric_columns = [
+                    "area", "area (m2)", "street", "street (m)", "longitude", "latitude",
+                    "built_year", "price_per_m2", "bedroom_num", "floor_num", "toilet_num", "livingroom_num"
+                ]
+                categorical_columns = [
+                    "category", "district", "direction", "legal_status"
+                ]
+
+                # Chuẩn hóa tất cả các cột số sang float64 hoặc int64
+                for col in input_df.columns:
+                    if any(num_col in col for num_col in numeric_columns):
+                        # Chuyển đổi mọi chuỗi rỗng thành NaN, sau đó điền giá trị 0
+                        input_df[col] = pd.to_numeric(input_df[col], errors='coerce').fillna(0)
+
+                        # Kiểu int cho các trường đếm
+                        if col in ["bedroom_num", "floor_num", "toilet_num", "livingroom_num", "built_year"]:
+                            input_df[col] = input_df[col].astype(np.int32)
+                        else:
+                            # Đảm bảo kiểu float64 cho các cột khác
+                            input_df[col] = input_df[col].astype(np.float64)
+
+                    # Đảm bảo các trường phân loại được lưu dưới dạng chuỗi (không gây lỗi isnan)
+                    elif any(cat_col in col for cat_col in categorical_columns):
+                        input_df[col] = input_df[col].astype(str)
+                        # Thay thế 'nan' và 'None' bằng chuỗi rỗng
+                        input_df[col] = input_df[col].replace(['nan', 'None', 'NaN'], '')
+
                 # Dự đoán giá trong log scale
-                log_prediction = model.predict(input_df)
+                try:
+                    # Sử dụng mô hình để dự đoán
+                    log_prediction = model.predict(input_df)
+                    st.write("Dự đoán thành công!")
+                except Exception as e:
+                    st.error(f"Lỗi khi dự đoán với mô hình: {e}")
+                    # Nếu vẫn gặp lỗi, trở về phương pháp thống kê
+                    return statistical_fallback(input_data, data)
 
                 # Chuyển đổi từ log về giá thực tế
                 if st.session_state.fallback_uses_log:
@@ -527,10 +594,29 @@ def fallback_prediction(input_data, data):
 def statistical_fallback(input_data, data):
     """Dự đoán giá sử dụng phương pháp thống kê khi không có sẵn mô hình"""
     try:
+        # Tạo bản sao của dữ liệu đầu vào và xử lý các trường hợp trống hoặc None
+        cleaned_input = {}
+        for key, value in input_data.items():
+            if value == '' or value is None:
+                # Các trường số sẽ được điền với giá trị mặc định
+                if key in ["bedroom_num", "floor_num", "toilet_num", "livingroom_num"]:
+                    cleaned_input[key] = -1
+                elif key in ["area", "street", "longitude", "latitude", "built_year"]:
+                    cleaned_input[key] = 0
+                else:
+                    cleaned_input[key] = ''
+            else:
+                cleaned_input[key] = value
+
         # Chuyển đổi dữ liệu đầu vào
-        category = input_data.get('category', '')
-        district = input_data.get('district', '')
-        area = float(input_data.get('area', 0))
+        category = cleaned_input.get('category', '')
+        district = cleaned_input.get('district', '')
+
+        # Đảm bảo area luôn là số hợp lệ
+        try:
+            area = float(cleaned_input.get('area', 0))
+        except (ValueError, TypeError):
+            area = 0
 
         # Nếu dữ liệu rỗng, trả về 0
         if len(data) == 0 or area <= 0:
@@ -555,25 +641,31 @@ def statistical_fallback(input_data, data):
         # Điều chỉnh giá dựa trên các yếu tố khác
         # Yếu tố 1: Số phòng ngủ
         bedroom_factor = 1.0
-        if 'bedroom_num' in input_data and input_data['bedroom_num'] > 0:
-            bedroom_num = int(input_data['bedroom_num'])
-            if bedroom_num >= 3:
-                bedroom_factor = 1.1  # Tăng 10% nếu có từ 3 phòng ngủ trở lên
-            elif bedroom_num <= 1:
-                bedroom_factor = 0.9  # Giảm 10% nếu chỉ có 1 phòng ngủ
+        if 'bedroom_num' in cleaned_input:
+            try:
+                bedroom_num = int(cleaned_input['bedroom_num'])
+                if bedroom_num >= 3:
+                    bedroom_factor = 1.1  # Tăng 10% nếu có từ 3 phòng ngủ trở lên
+                elif bedroom_num <= 1 and bedroom_num > 0:
+                    bedroom_factor = 0.9  # Giảm 10% nếu chỉ có 1 phòng ngủ
+            except (ValueError, TypeError):
+                # Nếu không chuyển đổi được, giữ nguyên hệ số
+                pass
 
         # Yếu tố 2: Hướng nhà
         direction_factor = 1.0
         good_directions = ['Đông', 'Nam', 'Đông Nam']
-        if 'direction' in input_data and input_data['direction'] in good_directions:
+        if 'direction' in cleaned_input and cleaned_input['direction'] in good_directions:
             direction_factor = 1.05  # Tăng 5% nếu hướng tốt
 
         # Yếu tố 3: Diện tích (nhà nhỏ thường có giá trên m² cao hơn)
         area_factor = 1.0
-        if area < 50:
-            area_factor = 1.1  # Tăng 10% cho nhà diện tích nhỏ
-        elif area > 100:
-            area_factor = 0.95  # Giảm 5% cho nhà diện tích lớn
+        # Đảm bảo area là số hợp lệ
+        if isinstance(area, (int, float)):
+            if area < 50 and area > 0:
+                area_factor = 1.1  # Tăng 10% cho nhà diện tích nhỏ
+            elif area > 100:
+                area_factor = 0.95  # Giảm 5% cho nhà diện tích lớn
 
         # Tính giá cuối cùng
         base_price = avg_price_per_m2 * area * bedroom_factor * direction_factor * area_factor
