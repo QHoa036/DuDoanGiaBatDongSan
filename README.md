@@ -1,12 +1,105 @@
-# MÔN: DỮ LIỆU LỚN VÀ ỨNG DỤNG
+# ỨNG DỤNG DỰ ĐOÁN GIÁ BẤT ĐỘNG SẢN VIỆT NAM
 
-## Ứng Dụng Dự Đoán Giá Bất Động Sản Việt Nam
+> **MÔN HỌC**: DỮ LIỆU LỚN VÀ ỨNG DỤNG
 
-## Giới thiệu
+## Tổng quan
 
-Ứng dụng dự đoán giá bất động sản Việt Nam được xây dựng trên nền tảng Streamlit, PySpark và mô hình học máy. Ứng dụng cung cấp khả năng dự đoán giá bất động sản dựa trên các đặc điểm của tài sản và phân tích dữ liệu thị trường bất động sản.
+Ứng dụng Dự đoán giá Bất động sản Việt Nam là một nền tảng hiện đại kết hợp công nghệ PySpark, học máy và Streamlit để cung cấp:
 
-## 👥 Nhóm phát triển
+- **Dự đoán giá bất động sản** chính xác dựa trên các đặc điểm của tài sản
+- **Phân tích thị trường** với giao diện trực quan, hiện đại và tương tác
+- **Xu hướng giá** theo khu vực, thời gian và các yếu tố ảnh hưởng
+- **Trải nghiệm người dùng** đa nền tảng và dễ sử dụng
+
+Ứng dụng được thiết kế theo kiến trúc MVVM (Model-View-ViewModel), đảm bảo tính mô-đun, dễ bảo trì và mở rộng.
+
+## Tính năng chính
+
+### 1. Dự đoán giá bất động sản
+
+- Nhập thông tin bất động sản và nhận dự đoán giá trị ngay lập tức
+- Hiển thị khoảng tin cậy dự đoán và độ chính xác của mô hình
+- Hỗ trợ nhiều loại bất động sản: căn hộ, nhà phố, biệt thự, đất nền
+
+### 2. Phân tích dữ liệu hiện đại
+
+- **Thẻ thống kê (KPI cards)** hiển thị giá trung bình, giá/m², số lượng BĐS, % biến động
+- **Biểu đồ tương tác** cho phép phân tích theo nhiều chiều dữ liệu
+- **Phân tích tương quan** giữa các đặc điểm và giá bất động sản
+- **Hiển thị tên đặc điểm bằng tiếng Việt** thay vì tên cột kỹ thuật
+
+### 3. Bảng điều khiển thống kê (Dashboard)
+
+- Biểu đồ xu hướng giá theo thời gian
+- Top khu vực có giá cao nhất/thấp nhất
+- Phân phối giá theo loại bất động sản
+- Năm có biến động giá lớn nhất
+
+### 4. Tính năng nâng cao
+
+- **Hỗ trợ đa nền tảng**: Windows, macOS và Linux
+- **Tích hợp Ngrok** để chia sẻ ứng dụng qua URL công khai
+- **Hệ thống nhật ký** toàn diện với nhiều cấp độ và giao diện quản lý
+
+## Cấu trúc dự án
+
+```bash
+Vietnam_Real_Estate_Price_Prediction/
+├── App/                            # Ứng dụng chính
+│   ├── src/                        # Mã nguồn
+│   │   ├── data/                   # Dữ liệu mẫu
+│   │   ├── logs/                   # Nhật ký hệ thống
+│   │   ├── styles/                 # CSS và giao diện
+│   │   └── utils/                  # Tiện ích
+│   └── vn_real_estate_app.py       # Ứng dụng chính
+├── References/                     # Tài liệu tham khảo
+├── .env.example                    # Mẫu cấu hình biến môi trường
+├── requirements.txt                # Danh sách thư viện
+└── run_app.sh                      # Script chạy ứng dụng (đa nền tảng)
+```
+
+## Hướng dẫn cài đặt và sử dụng
+
+### Yêu cầu hệ thống
+
+- **Python 3.8+**
+- **Java Runtime Environment (JRE)** (cho PySpark)
+- **Git Bash** (khuyến nghị cho Windows)
+
+### Cài đặt và chạy ứng dụng
+
+Ứng dụng hỗ trợ nhiều nền tảng (Windows, macOS, Linux) với một lệnh duy nhất:
+
+```bash
+./run_app.sh
+```
+
+Script này sẽ tự động:
+
+1. Phát hiện hệ điều hành và thiết lập môi trường phù hợp
+2. Cài đặt các dependency cần thiết
+3. Tạo và kích hoạt môi trường ảo Python
+4. Hỏi người dùng có muốn sử dụng Ngrok để tạo URL công khai
+5. Khởi chạy ứng dụng Streamlit
+
+### Sử dụng với Ngrok
+
+Để chia sẻ ứng dụng qua URL công khai:
+
+1. Đăng ký tài khoản tại [ngrok.com](https://ngrok.com)
+2. Lấy authtoken từ dashboard
+3. Nhập authtoken vào file env.local
+4. Chọn 'y' khi được hỏi về việc sử dụng Ngrok
+
+## Kiến trúc ứng dụng
+
+### Cải tiến và tối ưu hóa
+
+- **Streamlit Cache**: Tối ưu hóa với quy ước tham số có dấu gạch dưới (_) giúp tránh lỗi khi caching các đối tượng phức tạp
+- **Dashboard hiện đại**: Giao diện trực quan với các thẻ thống kê, gradient background, và biểu đồ tương tác
+- **Tên đặc điểm tiếng Việt**: Hiển thị các đặc điểm bằng tiếng Việt thay vì tên cột kỹ thuật
+
+## Nhóm phát triển
 
 - **Lê Thị Cẩm Giang** - Tác giả  <https://github.com/lcg1908>
 - **Nguyễn Quỳnh Anh** - Đồng tác giả  <https://github.com/Quynanhng25>
@@ -15,138 +108,13 @@
 - **Trần Hoàng Nghĩa** - Đồng tác giả <https://github.com/Blink713>
 - **Nguyễn Phương Thảo** - Đồng tác giả <https://github.com/thaonguyenbi>
 
-## Cấu trúc kiến trúc MVVM
+## Thư viện chính
 
-Ứng dụng được thiết kế theo mô hình kiến trúc MVVM (Model-View-ViewModel) để tạo sự phân tách rõ ràng giữa các thành phần và dễ dàng bảo trì, mở rộng.
-
-### Cấu trúc thư mục
-
-```txt
-Vietnam_Real_Estate_Price_Prediction/
-│── App/                                   # Ứng dụng chính
-│   └── src/                               # Mã nguồn chính của ứng dụng
-│       │── data/                          # Dữ liệu mẫu cho phiên bản demo
-│       │── logs/                          # Thư mục nhật ký
-│       │── styles/                        # CSS và các tài nguyên giao diện
-│       │── utils/                         # Các tiện ích
-│       │   │── spark_utils.py             # Tiện ích PySpark
-│   └── vn_real_estate_app.py              # Điểm vào chính của ứng dụng
-│── References/                            # Tài liệu tham khảo
-│── .env.example                           # Mẫu cấu hình biến môi trường
-│── run_app.sh                             # Tập lệnh chạy ứng dụng chính (đa nền tảng)
-```
-
-## Mô tả các thành phần
-
-### App - Ứng dụng chính
-
-Ứng dụng chính là phiên bản đơn giản hóa, tối ưu cho môi trường sản xuất, hội tụ tất cả các tính năng chính trong một tập tin duy nhất:
-
-- **vn_real_estate_app.py**: Tập tin ứng dụng độc lập hội tụ tất cả các chức năng:
-  - Xử lý dữ liệu và huấn luyện mô hình
-  - Giao diện dự đoán giá bất động sản
-  - Trực quan hóa và phân tích dữ liệu
-  - Tích hợp Ngrok để tạo URL công khai
-  - Hỗ trợ đa nền tảng (Windows, macOS, Linux)
-
-### Demo - Phiên bản cấu trúc module hóa theo MVVM
-
-Phiên bản demo được xây dựng theo mô hình MVVM với cấu trúc rõ ràng, dễ bảo trì và mở rộng:
-
-#### 1. Model
-
-- **property_model.py**: Định nghĩa các lớp mô hình dữ liệu bất động sản và kết quả dự đoán
-- **data_service.py**: Cung cấp dịch vụ xử lý dữ liệu, tải dữ liệu và huấn luyện mô hình
-
-#### 2. ViewModel
-
-- **app_viewmodel.py**: Quản lý trạng thái và logic chung của ứng dụng
-- **prediction_viewmodel.py**: Xử lý logic dự đoán giá bất động sản
-- **analytics_viewmodel.py**: Xử lý logic phân tích dữ liệu và biểu đồ
-
-#### 3. View
-
-- **app_view.py**: Định nghĩa giao diện chính và điều hướng
-- **prediction_view.py**: Giao diện dự đoán giá bất động sản
-- **analytics_view.py**: Hiển thị biểu đồ phân tích dữ liệu
-- **about_view.py**: Hiển thị thông tin về ứng dụng
-
-#### 4. Utils
-
-- **logger_utils.py**: Hệ thống nhật ký đa cấp độ tích hợp
-- **ui_utils.py**: Tiện ích giao diện người dùng
-- **spark_utils.py**: Hỗ trợ cấu hình PySpark
-- **session_utils.py**: Quản lý session và lưu trữ metrics
-- **ngrok_utils.py**: Tiện ích tạo URL công khai với Ngrok
-
-### Tài liệu và hướng dẫn
-
-- **Docs/**: Chứa các tài liệu hướng dẫn sử dụng và phạm vi ứng dụng
-- **References/**: Chứa tài liệu tham khảo và nghiên cứu liên quan
-
-## 🚀 Chạy ứng dụng
-
-Ứng dụng được thiết kế để chạy trên nhiều nền tảng khác nhau (Windows, macOS, Linux) chỉ với một lệnh duy nhất:
-
-```bash
-./run_app.sh
-```
-
-Tập lệnh `run_app.sh` sẽ tự động thực hiện:
-
-1. Phát hiện hệ điều hành và thiết lập môi trường
-2. Cài đặt các phụ thuộc cần thiết
-3. Tạo và kích hoạt môi trường ảo Python
-4. Hỏi người dùng có muốn sử dụng Ngrok không
-5. Khởi chạy ứng dụng Streamlit
-
-### Sử dụng với Ngrok
-
-Để tạo URL công khai và chia sẻ ứng dụng:
-
-1. Tạo tài khoản tại [ngrok.com](https://ngrok.com)
-2. Lấy token xác thực từ bảng điều khiển
-3. Chọn 'y' khi được hỏi về Ngrok
-4. Nhập token (sẽ được lưu cho lần sau)
-
-## 📊 Hệ thống nhật ký
-
-Ứng dụng tích hợp hệ thống nhật ký toàn diện:
-
-- Nhiều cấp độ nhật ký (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-- Ghi vào cả console và tập tin
-- Giao diện xem nhật ký trong Streamlit
-- Lọc và tải xuống nhật ký
-- Ghi thời gian thực thi của các hàm quan trọng
-
-## 🌟 Tính năng chính
-
-1. **Dự đoán giá bất động sản**
-   - Nhập các đặc điểm bất động sản và nhận dự đoán giá trị
-   - Form tương tác với kết quả tức thì
-   - Hiển thị khoảng tin cậy dự đoán
-
-2. **Phân tích dữ liệu**
-   - Biểu đồ phân phối giá theo khu vực
-   - Trực quan hóa mối quan hệ giữa các đặc điểm và giá
-   - Bản đồ xu hướng giá theo địa lý
-
-3. **Thống kê thị trường**
-   - So sánh giá theo loại bất động sản và vị trí
-   - Phân tích xu hướng giá
-   - Xác định yếu tố ảnh hưởng đến giá
-
-4. **Giao diện người dùng hiện đại**
-   - Thiết kế responsive cho máy tính và di động
-   - Điều hướng trực quan
-   - Trực quan hóa tương tác
-
-## 💻 Yêu cầu hệ thống
-
-- **Python 3.8+**
-- **Java Runtime Environment (JRE)** cho PySpark
-- **Git Bash** (khuyến nghị cho Windows)
-- **Các thư viện Python**: streamlit, pyspark, pandas, numpy, plotly, matplotlib, seaborn, pyngrok, python-dotenv
+- **PySpark**: Xử lý dữ liệu lớn và xây dựng mô hình ML
+- **Streamlit**: Xây dựng giao diện web tương tác
+- **Pandas & NumPy**: Xử lý và phân tích dữ liệu
+- **Plotly & Matplotlib**: Trực quan hóa dữ liệu
+- **Ngrok**: Tạo URL công khai để chia sẻ ứng dụng
 
 ## Lời cảm ơn
 
