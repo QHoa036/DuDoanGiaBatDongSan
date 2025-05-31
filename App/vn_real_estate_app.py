@@ -121,7 +121,7 @@ def load_data(file_path=None):
                 else:
                     # Nếu không tìm thấy file ở bất kỳ vị trí nào
                     raise FileNotFoundError(
-                        f"❌ Không tìm thấy file dữ liệu tại: {file_path}\n"
+                        f"Không tìm thấy file dữ liệu tại: {file_path}\n"
                         "Vui lòng đảm bảo rằng:\n"
                         "1. Bạn đã tải dữ liệu và đặt trong thư mục Demo/data/\n"
                         "2. File được đặt tên chính xác là 'Final Data Cleaned.csv'\n"
@@ -1313,10 +1313,15 @@ elif app_mode == "Trực quan hóa":
 
         # Cập nhật layout của biểu đồ
         fig.update_layout(
-            margin=dict(t=0, b=0, l=0, r=0),
-            coloraxis_colorbar=dict(tickfont=dict(color='#333333'))
+            margin=dict(t=0, b=0, l=0, r=0),  # Loại bỏ toàn bộ margin (lề) xung quanh biểu đồ: top, bottom, left, right đều bằng 0
+            coloraxis_colorbar=dict(         # Tùy chỉnh thanh màu (colorbar) dùng trong các biểu đồ heatmap hoặc scatter có màu gradient
+                tickfont=dict(color='#333333')  # Đặt màu chữ cho các giá trị trên colorbar (mã màu xám đậm)
+            )
         )
+
+        # Hiển thị biểu đồ bằng Streamlit, tự động điều chỉnh kích thước theo khung chứa
         st.plotly_chart(fig, use_container_width=True)
+
 
         # Thêm khoảng trống
         st.markdown('<div style="height: 30px;"></div>', unsafe_allow_html=True)
@@ -1361,9 +1366,13 @@ elif app_mode == "Trực quan hóa":
 
         # Cập nhật layout của biểu đồ
         fig.update_layout(
-            margin=dict(t=0, b=0, l=0, r=0),
-            coloraxis_colorbar=dict(tickfont=dict(color='#333333'))
+            margin=dict(t=0, b=0, l=0, r=0),  # Loại bỏ toàn bộ margin (lề) xung quanh biểu đồ: top, bottom, left, right đều bằng 0
+            coloraxis_colorbar=dict(         # Tùy chỉnh thanh màu (colorbar) dùng trong các biểu đồ heatmap hoặc scatter có màu gradient
+                tickfont=dict(color='#333333')  # Đặt màu chữ cho các giá trị trên colorbar (mã màu xám đậm)
+            )
         )
+
+        # Hiển thị biểu đồ bằng Streamlit, tự động điều chỉnh kích thước theo khung chứa
         st.plotly_chart(fig, use_container_width=True)
 
 # MARK: - Chế độ Về dự án
