@@ -502,7 +502,7 @@ EOF
 
     # Chạy tập lệnh thiết lập Ngrok
     log "INFO" "Đang khởi động Streamlit với đường hầm Ngrok..."
-    $PYTHON_PATH .temp_ngrok_setup.py --streamlit_path "$STREAMLIT_PATH" --app_path "App/vn_real_estate_app.py" --ngrok_token "$NGROK_TOKEN"
+    $PYTHON_PATH .temp_ngrok_setup.py --streamlit_path "$STREAMLIT_PATH" --app_path "App/app.py" --ngrok_token "$NGROK_TOKEN"
 
     # Dọn dẹp tập lệnh tạm thời
     rm .temp_ngrok_setup.py
@@ -529,7 +529,7 @@ if [[ $use_ngrok == "y" || $use_ngrok == "Y" ]]; then
 else
     # Chạy cục bộ không cần Ngrok
     log "INFO" "Đang khởi động Streamlit trên localhost:8501..."
-    $STREAMLIT_PATH run App/vn_real_estate_app.py
+    $STREAMLIT_PATH run App/app.py
 fi
 
 # Dọn dẹp
