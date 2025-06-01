@@ -200,7 +200,7 @@ def initialize_services() -> Dict[str, Any]:
 
         model_service = ModelService(
             _data_service=services["data_service"],
-            model_dir=os.path.join(AppConfig.get_base_dir(), 'models'),
+            model_dir=os.path.join(AppConfig.get_base_dir(), 'src', 'models'),
             using_spark=spark_available
         )
         services["model_service"] = model_service

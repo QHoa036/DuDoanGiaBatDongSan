@@ -44,24 +44,13 @@ class ModelService:
         # Sử dụng model_dir được truyền vào hoặc đường dẫn mặc định
         if model_dir:
             self.model_dir = model_dir
-
         else:
             # Xác định thư mục gốc của ứng dụng (App) để tạo đường dẫn tương đối
-            app_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+            app_root = AppConfig.get_base_dir()
 
-            # Thử đường dẫn ưu tiên: {app_root}/src/gbt_regressor_model
-            src_models_dir = os.path.join(app_root, "src", "gbt_regressor_model")
-            logger.info(f"Đường dẫn đến mô hình: {src_models_dir}")
-
-            # Luôn ưu tiên sử dụng mô hình từ thư mục src/gbt_regressor_model nếu nó tồn tại
-            if os.path.exists(src_models_dir) and os.path.exists(os.path.join(src_models_dir, "metadata")):
-                self.model_dir = src_models_dir
-                logger.info(f"Sử dụng mô hình từ {src_models_dir}")
-
-            # Mặc định nếu không tìm thấy mô hình
-            else:
-                self.model_dir = src_models_dir  # Vẫn đặt đường dẫn ưu tiên làm mặc định
-                logger.warning(f"Không tìm thấy mô hình tại {src_models_dir}") if using_spark else ""
+            # Đặt đường dẫn mặc định là GBT regressor model
+            self.model_dir = os.path.join(app_root, "src", "gbt_regressor_model")
+            logger.info(f"Sử dụng mô hình mặc định từ {self.model_dir}")
 
         self.using_spark = using_spark
 
@@ -74,18 +63,57 @@ class ModelService:
         Phiên bản có cache của hàm khởi tạo Spark với cấu hình tối ưu và xử lý lỗi
         """
         try:
-            logger.info("Attempting to initialize cached Spark session")
             spark = SparkUtils.create_spark_session(
                 app_name=AppConfig.SPARK_APP_NAME,
                 enable_hive=AppConfig.SPARK_ENABLE_HIVE
             )
-            logger.info("Testing Spark session connection...")
             spark.sparkContext.parallelize([1]).collect()
-            logger.info("Spark session initialized and working properly")
             return spark
+
         except Exception as e:
             logger.error(f"Không thể khởi tạo Spark session: {e}")
             return None
+
+    def remove_outliers(self, df):
+        """
+        Loại bỏ các giá trị ngoại lai trong giá bất động sản
+
+        Args:
+            df (pd.DataFrame hoặc pyspark.sql.DataFrame): DataFrame cần xử lý
+
+        Returns:
+            DataFrame đã loại bỏ outliers
+        """
+        try:
+            # Xử lý khác nhau dựa trên loại DataFrame
+            if isinstance(df, pd.DataFrame):
+                # Áp dụng cho Pandas DataFrame
+                logger.info("Loại bỏ outliers trong Pandas DataFrame")
+                initial_count = len(df)
+
+                # Lọc giá trong khoảng hợp lý (từ 2 triệu đến 100 triệu VND/m²)
+                df = df[(df['price_per_m2'] >= 2e6) & (df['price_per_m2'] <= 1e8)]
+
+                filtered_count = len(df)
+                logger.info(f"Đã loại bỏ {initial_count - filtered_count} outliers từ {initial_count} dòng")
+
+            else:
+                # Áp dụng cho Spark DataFrame
+                logger.info("Loại bỏ outliers trong Spark DataFrame")
+                initial_count = df.count()
+
+                # Lọc giá trong khoảng hợp lý (từ 2 triệu đến 100 triệu VND/m²)
+                df = df.filter((col("price_per_m2") >= 2e6) & (col("price_per_m2") <= 1e8))
+
+                filtered_count = df.count()
+                logger.info(f"Đã loại bỏ {initial_count - filtered_count} outliers từ {initial_count} dòng")
+
+            return df
+
+        except Exception as e:
+            logger.error(f"Lỗi khi loại bỏ outliers: {e}")
+            # Trả về DataFrame ban đầu nếu có lỗi
+            return df
 
     def convert_to_spark(self, data: pd.DataFrame):
         """
@@ -107,6 +135,7 @@ class ModelService:
             spark_df = spark.createDataFrame(data)
             logger.info(f"Đã chuyển đổi thành công DataFrame sang Spark DataFrame")
             return spark_df
+
         except Exception as e:
             logger.error(f"Lỗi khi chuyển đổi DataFrame sang Spark DataFrame: {e}")
             return None
@@ -121,20 +150,6 @@ class ModelService:
             Tuple[Any, bool]: Mô hình đã tải và trạng thái tải (thành công hay không)
         """
         try:
-            logger.info(f"Đang cố gắng tải mô hình GBT đã huấn luyện từ {self.model_dir}")
-
-            # Kiểm tra xem thư mục mô hình có tồn tại không
-            if not os.path.exists(self.model_dir):
-                logger.error(f"Thư mục mô hình {self.model_dir} không tồn tại")
-                return None, False
-
-            # Kiểm tra cấu trúc thư mục mô hình để đảm bảo tính hợp lệ
-            required_subdirs = ["metadata", "data"]
-            for subdir in required_subdirs:
-                if not os.path.exists(os.path.join(self.model_dir, subdir)):
-                    logger.error(f"Thư mục mô hình thiếu thư mục con bắt buộc: {subdir}")
-                    return None, False
-
             # Lấy phiên Spark
             spark = ModelService.get_spark_session_cached()
             if spark is None:
@@ -188,6 +203,39 @@ class ModelService:
                     from pyspark.ml import Pipeline, PipelineModel
                     pipeline = Pipeline(stages=[model])
                     pipeline_model = PipelineModel(stages=[model])
+
+                    # Đánh giá mô hình sau khi tải
+                    try:
+                        # Lấy một phần dữ liệu để đánh giá
+                        from src.services.data_service import DataService
+                        data_service = DataService()
+                        data = data_service.load_data()
+                        processed_data = data_service.preprocess_data(data)
+                        spark_df = self.convert_to_spark(processed_data)
+
+                        if spark_df is not None:
+                            # Chia dữ liệu để đánh giá
+                            _, test_df = spark_df.randomSplit([0.8, 0.2], seed=42)
+
+                            # Áp dụng mô hình và đánh giá
+                            predictions = pipeline_model.transform(test_df)
+                            predictions = predictions.withColumn("predicted_price", expm1("prediction"))
+
+                            evaluator_rmse = RegressionEvaluator(labelCol="price_per_m2", predictionCol="predicted_price", metricName="rmse")
+                            evaluator_r2 = RegressionEvaluator(labelCol="price_per_m2", predictionCol="predicted_price", metricName="r2")
+                            evaluator_mae = RegressionEvaluator(labelCol="price_per_m2", predictionCol="predicted_price", metricName="mae")
+
+                            rmse = evaluator_rmse.evaluate(predictions)
+                            r2 = evaluator_r2.evaluate(predictions)
+                            mae = evaluator_mae.evaluate(predictions)
+
+                            logger.info(f"Đánh giá mô hình sau khi tải: R²={r2:.4f}, RMSE={rmse:.2f}, MAE={mae:.2f}")
+
+                            # Cập nhật session state
+                            st.session_state.model_r2_score = r2
+                            st.session_state.model_rmse = rmse
+                    except Exception as e:
+                        logger.warning(f"Không thể đánh giá mô hình sau khi tải: {e}")
 
                     logger.info("Đã đóng gói GBTRegressionModel vào PipelineModel")
                     return pipeline_model, True
@@ -365,9 +413,13 @@ class ModelService:
             # Log the full pipeline stages
             logger.info(f"Main GBT pipeline stages: {[type(stage).__name__ for stage in stages]}")
 
-            # Chia tập dữ liệu
+            # Loại bỏ outliers - giá trị ngoại lai
+            logger.info("Đang loại bỏ outliers trước khi huấn luyện mô hình...")
+            spark_df = self.remove_outliers(spark_df)
+
+            # Phân chia dữ liệu thành tập train và test (sau khi đã loại bỏ outliers)
             train_df, test_df = spark_df.randomSplit([0.8, 0.2], seed=42)
-            logger.info(f"Bắt đầu huấn luyện mô hình Spark GBT (mô hình chính)")
+            logger.info(f"Phân chia dữ liệu: {train_df.count()} dòng train, {test_df.count()} dòng test")
 
             # Huấn luyện mô hình chính
             pipeline_model = pipeline.fit(train_df)
@@ -484,16 +536,16 @@ class ModelService:
             # Lấy pipeline từ session state
             pipeline_model = st.session_state.model_pipeline
             if pipeline_model is None:
-                logger.error("No model pipeline found in session state")
-                raise ValueError("Model pipeline is not available")
+                logger.error("Không tìm thấy pipeline mô hình trong session state")
+                raise ValueError("Pipeline mô hình không khả dụng")
 
             # Lấy spark session
             spark = ModelService.get_spark_session_cached()
             if spark is None:
-                logger.error("Cannot get Spark session for prediction")
-                raise ValueError("Spark session is not available")
+                logger.error("Không thể lấy phiên Spark cho dự đoán")
+                raise ValueError("Phiên Spark không khả dụng")
 
-            # Standardize area field naming
+            # Chuẩn hóa tên trường diện tích
             input_data_copy = input_data.copy()
             if "area" in input_data_copy and "area_m2" not in input_data_copy:
                 input_data_copy["area_m2"] = input_data_copy["area"]
@@ -516,7 +568,7 @@ class ModelService:
 
             # Chuyển đổi dữ liệu đầu vào thành DataFrame
             input_df = pd.DataFrame([input_data_copy])
-            logger.info(f"Input DataFrame columns: {input_df.columns.tolist()}")
+            logger.info(f"Các cột của DataFrame đầu vào: {input_df.columns.tolist()}")
 
             # Kiểm tra và chuyển đổi kiểu dữ liệu phù hợp
             for col in input_df.columns:
@@ -531,16 +583,16 @@ class ModelService:
             if "price_per_m2" in spark_input.columns:
                 spark_input = spark_input.withColumn("price_log", log1p(col("price_per_m2")))
 
-            # Logging full schema trước khi dự đoán để debug
-            logger.info(f"Spark input schema: {spark_input.schema}")
+            # Ghi log schema đầy đủ trước khi dự đoán để debug
+            logger.info(f"Schema đầu vào Spark: {spark_input.schema}")
 
             # Dự đoán
-            logger.info("Applying pre-trained model to input data...")
+            logger.info("Áp dụng mô hình đã huấn luyện cho dữ liệu đầu vào...")
             predictions = pipeline_model.transform(spark_input)
 
-            # Lấy prediction từ log-price và chuyển về giá trị thực
+            # Lấy kết quả dự đoán từ log-price và chuyển về giá trị thực
             log_prediction = predictions.select("prediction").first()[0]
-            prediction_value = float(np.exp(log_prediction) - 1)  # expm1 in numpy
+            prediction_value = float(np.exp(log_prediction) - 1)  # expm1 trong numpy
 
             # Tính giá dự đoán (price_per_m2 * area_m2)
             area = float(input_data_copy.get("area_m2", 1.0))
@@ -554,15 +606,15 @@ class ModelService:
                 price_range_high=total_price * 1.1
             )
 
-            logger.info(f"Spark prediction result: {result.predicted_price:,.2f} VND")
+            logger.info(f"Kết quả dự đoán Spark: {result.predicted_price:,.2f} VND")
             return result
 
         except Exception as e:
-            logger.error(f"Error in Spark prediction: {e}")
+            logger.error(f"Lỗi trong quá trình dự đoán Spark: {e}")
             return PredictionResult(
                 predicted_price=0,
                 confidence_level=0,
                 price_range_low=0,
                 price_range_high=0,
-                error_message=f"Error during Spark prediction: {str(e)}"
+                error_message=f"Lỗi trong quá trình dự đoán Spark: {str(e)}"
             )
