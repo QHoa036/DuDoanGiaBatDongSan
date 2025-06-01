@@ -56,7 +56,6 @@ def render_about_view():
             <p>Dự án sử dụng các công nghệ hiện đại để xử lý dữ liệu lớn và học máy:</p>
             <div style="margin-top: 15px;">
                 <span class="tech-tag">Selenium</span>
-                <span class="tech-tag">BeautifulSoup</span>
                 <span class="tech-tag">Apache Spark</span>
                 <span class="tech-tag">PySpark</span>
                 <span class="tech-tag">Gradient Boosted Trees</span>
@@ -88,6 +87,15 @@ def render_about_view():
                             <div>
                                 <strong>Lê Thị Cẩm Giang</strong>
                                 <p style="margin: 0;"><a href="https://github.com/lcg1908" style="color: #4c9aff; text-decoration: none;">github.com/lcg1908</a></p>
+                            </div>
+                        </div>
+                    </li>
+                    <li style="margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center;">
+                            <img src="https://github.com/Blink713.png" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; border: 2px solid #4c9aff;">
+                            <div>
+                                <strong>Trần Hoàng Nghĩa</strong>
+                                <p style="margin: 0;"><a href="https://github.com/Blink713" style="color: #4c9aff; text-decoration: none;">github.com/Blink713</a></p>
                             </div>
                         </div>
                     </li>
@@ -131,36 +139,6 @@ def render_about_view():
             </div>
         </div>
         """, unsafe_allow_html=True)
-
-    # Bộ dữ liệu
-    # Lấy thông tin từ session_state nếu có
-    dataset_data_count = "N/A"
-
-    # Lấy thông tin dữ liệu từ session_state
-    if st.session_state.get('data') is not None:
-        dataset_data_count = f"{len(st.session_state.data):,}"
-
-    st.markdown(f"""
-    <div class="about-card">
-        <div class="about-card-title">
-            <svg class="about-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z" fill="currentColor"/>
-                <path d="M7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z" fill="currentColor"/>
-            </svg>
-            <h2>Bộ dữ liệu</h2>
-        </div>
-        <div class="about-card-content">
-            <p>Bộ dữ liệu gồm thông tin về hơn <strong>{dataset_data_count}</strong> bất động sản được thu thập từ website <a href="https://nhadat.cafeland.vn" style="color: #4c9aff; text-decoration: none;">nhadat.cafeland.vn</a>.</p>
-            <p>Dữ liệu bao gồm các thuộc tính chính:</p>
-            <ul>
-                <li><strong>Vị trí:</strong> Tỉnh/thành, Quận/huyện</li>
-                <li><strong>Đặc điểm:</strong> Diện tích, Số phòng, Số tầng</li>
-                <li><strong>Phân loại:</strong> Loại bất động sản, Hướng nhà</li>
-                <li><strong>Giá trị:</strong> Giá/m²</li>
-        </div>
-        <p>Dữ liệu được thu thập và làm sạch, sau đó được sử dụng để huấn luyện mô hình dự đoán giá bất động sản chính xác.</p>
-    </div>
-    """, unsafe_allow_html=True)
 
     st.markdown(f"""
     <div class="about-card">

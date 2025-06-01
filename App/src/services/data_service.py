@@ -1,4 +1,4 @@
-# MARK: - Imports và khởi tạo
+# MARK: - Thư viện
 
 import os
 import pandas as pd

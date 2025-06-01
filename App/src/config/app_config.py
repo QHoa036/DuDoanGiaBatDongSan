@@ -14,6 +14,9 @@ class AppConfig:
     APP_MODES = ["Dự đoán", "Trực quan hóa", "Về dự án"]
     DEFAULT_APP_MODE = "Dự đoán"
 
+    # PySpark Home
+    SPARK_HOME =  "/Users/admin/Development/spark"
+
     # Đường dẫn đến các tài nguyên
     @classmethod
     def get_base_dir(cls):

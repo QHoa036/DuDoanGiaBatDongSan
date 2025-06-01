@@ -44,14 +44,15 @@ def setup_logger(name='vn_real_estate', log_level=logging.INFO, log_to_file=True
         logs_dir = os.path.join(current_dir, 'logs')
         os.makedirs(logs_dir, exist_ok=True)
 
-        # Tạo tên file log với timestamp
+        # Tạo tên file log với định dạng app_YYYYMMDD.log
+        today = datetime.now().strftime('%Y%m%d')
         log_file = os.path.join(
             logs_dir,
-            f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+            f"app_{today}.log"
         )
 
-        # Thiết lập file handler
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        # Thiết lập file handler với mode='w' để ghi đè file nếu đã tồn tại
+        file_handler = logging.FileHandler(log_file, mode='w', encoding='utf-8')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 

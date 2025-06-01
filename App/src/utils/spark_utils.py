@@ -12,7 +12,7 @@ import os
 import sys
 import logging
 import tempfile
-from typing import Dict, Optional, Union, List, Any
+from typing import Dict, Optional, Any
 from pyspark.sql import SparkSession
 from pyspark import SparkConf
 from src.utils.logger_util import get_logger
@@ -72,6 +72,45 @@ class SparkUtils:
         logger.info("Đã cấu hình Spark logging thành công")
 
     @staticmethod
+    def stop_spark_session(spark=None):
+        """
+        Dừng SparkSession hiện tại một cách an toàn nếu nó tồn tại
+
+        Args:
+            spark (SparkSession, optional): Phiên làm việc Spark cần dừng. Nếu không cung cấp, sẽ dừng phiên hiện tại.
+        """
+        try:
+            # Nếu cung cấp một SparkSession cụ thể
+            if spark is not None:
+                try:
+                    spark.stop()
+                    logger.info("Đã dừng SparkSession cụ thể")
+                    return True
+                except Exception as e:
+                    logger.error(f"Lỗi khi dừng SparkSession cụ thể: {e}")
+                    return False
+
+            # Nếu không cung cấp SparkSession, dừng session hiện tại
+            # Kiểm tra nếu Spark đã được khởi tạo
+            if SparkSession._instantiatedSession is not None:
+                # Lấy phiên làm việc hiện tại
+                current_session = SparkSession.getActiveSession() or SparkSession._instantiatedSession
+                if current_session is not None:
+                    # Lấy SparkContext từ session
+                    sc = current_session.sparkContext
+                    # Dừng SparkContext một cách an toàn
+                    sc.stop()
+                    # Xóa các tham chiếu đến session
+                    SparkSession._instantiatedSession = None
+                    SparkSession._activeSession = None
+                    logger.info("Đã dừng phiên làm việc Spark hiện tại")
+                    return True
+            return False
+        except Exception as e:
+            logger.warning(f"Lỗi khi dừng SparkSession: {e}")
+            return False
+
+    @staticmethod
     def create_spark_session(app_name: str = "VNRealEstatePricePrediction",
                             config: Optional[Dict[str, Any]] = None,
                             enable_hive: bool = True,
@@ -89,6 +128,9 @@ class SparkUtils:
             SparkSession: phiên làm việc Spark hoặc None nếu có lỗi
         """
         try:
+            # Dừng phiên Spark hiện tại để tránh lỗi LiveListenerBus
+            SparkUtils.stop_spark_session()
+
             # Đảm bảo log đã được cấu hình
             SparkUtils.configure_spark_logging()
 
@@ -98,6 +140,10 @@ class SparkUtils:
             spark_conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
             spark_conf.set("spark.sql.repl.eagerEval.enabled", "true")
             spark_conf.set("spark.sql.adaptive.enabled", "true")
+
+            # Cấu hình để tránh lỗi LiveListenerBus
+            spark_conf.set("spark.driver.allowMultipleContexts", "true")
+            spark_conf.set("spark.dynamicAllocation.enabled", "false")
 
             # Thiết lập cấu hình tạm
             temp_dir = tempfile.gettempdir()
@@ -130,28 +176,7 @@ class SparkUtils:
             logger.error(f"Lỗi khi khởi tạo SparkSession: {e}")
             return None
 
-    @staticmethod
-    def stop_spark_session(spark: Optional[SparkSession]) -> bool:
-        """
-        Dừng phiên làm việc Spark an toàn
-
-        Args:
-            spark (SparkSession): Phiên làm việc Spark cần dừng
-
-        Returns:
-            bool: True nếu dừng thành công, False nếu có lỗi
-        """
-        if not spark:
-            logger.warning("Không có SparkSession để dừng")
-            return False
-
-        try:
-            spark.stop()
-            logger.info("Đã dừng SparkSession thành công")
-            return True
-        except Exception as e:
-            logger.error(f"Lỗi khi dừng SparkSession: {e}")
-            return False
+    # Đã có phương thức stop_spark_session ở trên
 
     @staticmethod
     def is_spark_available() -> bool:
@@ -168,7 +193,7 @@ class SparkUtils:
 
             # Đóng phiên làm việc thử nghiệm nếu đã tạo
             if available:
-                SparkUtils.stop_spark_session(spark)
+                SparkUtils.stop_spark_session(spark=spark)
 
             return available
         except Exception:
@@ -413,9 +438,9 @@ def get_spark_session(app_name="Vietnam Real Estate Price Prediction", enable_hi
         SparkSession: Session Spark đã được cấu hình
     """
     # Sử dụng phương thức tĩnh của lớp SparkUtils
+    # Removed silence_warnings as it's not a valid parameter for create_spark_session
     return SparkUtils.create_spark_session(app_name=app_name,
-                                        enable_hive=enable_hive,
-                                        silence_warnings=silence_warnings)
+                                        enable_hive=enable_hive)
 
 
 def configure_spark_logging():
@@ -450,12 +475,12 @@ def stop_spark_session(spark=None):
     Hàm tương thích ngược để dừng SparkSession
 
     Args:
-        spark (SparkSession): Phiên làm việc Spark cần dừng
+        spark (SparkSession, optional): Phiên làm việc Spark cần dừng. Nếu không cung cấp, sẽ dừng phiên hiện tại.
 
     Returns:
         bool: True nếu dừng thành công, False nếu có lỗi
     """
-    return SparkUtils.stop_spark_session(spark)
+    return SparkUtils.stop_spark_session(spark=spark)
 
 
 def diagnose_spark():

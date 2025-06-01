@@ -150,6 +150,21 @@ install_system_dependencies() {
 install_system_dependencies
 
 # =============================================================================
+# THIẾT LẬP BIếN MÔI TRƯỜNG SPARK
+# =============================================================================
+log_banner "THIẾT LẬP BIếN MÔI TRƯỜNG SPARK"
+
+# Thiết lập đường dẫn SPARK_HOME
+export SPARK_HOME="/Users/admin/Development/spark"
+
+# Thêm SPARK_HOME vào PATH
+export PATH="$SPARK_HOME/bin:$PATH"
+
+# Thiết lập PYTHONPATH để tìm thấy PySpark
+export PYTHONPATH="$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.9-src.zip:$PYTHONPATH"
+log "INFO" "Kích hoạt PySpark"
+
+# =============================================================================
 # THIẾT LẬP MÔI TRƯỜNG ẢO PYTHON
 # =============================================================================
 log_banner "ĐANG THIẾT LẬP MÔI TRƯỜNG PYTHON"
@@ -502,7 +517,7 @@ EOF
 
     # Chạy tập lệnh thiết lập Ngrok
     log "INFO" "Đang khởi động Streamlit với đường hầm Ngrok..."
-    $PYTHON_PATH .temp_ngrok_setup.py --streamlit_path "$STREAMLIT_PATH" --app_path "App/app.py" --ngrok_token "$NGROK_TOKEN"
+    $PYTHON_PATH .temp_ngrok_setup.py --streamlit_path "$STREAMLIT_PATH" --app_path "App/vn_real_estate_app.py" --ngrok_token "$NGROK_TOKEN"
 
     # Dọn dẹp tập lệnh tạm thời
     rm .temp_ngrok_setup.py
@@ -529,7 +544,7 @@ if [[ $use_ngrok == "y" || $use_ngrok == "Y" ]]; then
 else
     # Chạy cục bộ không cần Ngrok
     log "INFO" "Đang khởi động Streamlit trên localhost:8501..."
-    $STREAMLIT_PATH run App/app.py
+    $STREAMLIT_PATH run App/vn_real_estate_app.py
 fi
 
 # Dọn dẹp

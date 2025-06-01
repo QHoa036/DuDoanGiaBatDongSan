@@ -103,6 +103,7 @@ class PredictionResult:
     price_range_low: Optional[float] = None
     price_range_high: Optional[float] = None
     similar_properties: Optional[List[Dict[str, Union[str, float, int]]]] = None
+    error_message: Optional[str] = None
 
     def __post_init__(self):
         """

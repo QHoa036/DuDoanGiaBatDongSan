@@ -3,8 +3,6 @@
 import streamlit as st
 from typing import List, Any, Optional
 
-from src.services.data_service import DataService
-from src.services.model_service import ModelService
 from src.config.app_config import AppConfig
 from src.utils.logger_util import get_logger
 
@@ -155,7 +153,11 @@ class AppViewModel:
         """
         # Kiểm tra xem mô hình đã được huấn luyện chưa
         if 'model_trained' in st.session_state and st.session_state.model_trained:
+            logger.info("Mô hình đã được huấn luyện, bỏ qua bước huấn luyện")
+            logger.info(f"Các chỉ số hiện tại trong session state: R2={st.session_state.get('model_r2_score', 0.0)}, RMSE={st.session_state.get('model_rmse', 0.0)}")
             return True
+
+        logger.info("Mô hình cần được huấn luyện, bắt đầu quá trình huấn luyện")
 
         # Lấy dữ liệu
         data = self.get_data()
@@ -175,9 +177,6 @@ class AppViewModel:
             progress_bar.progress(30, text="Đang huấn luyện mô hình...")
             model, metrics = self._model_service.train_model(data)
 
-            # Cập nhật trạng thái
-            progress_bar.progress(80, text="Đang hoàn thiện mô hình...")
-
             # Lưu mô hình vào session state
             if model is not None:
                 st.session_state.model = model
@@ -186,12 +185,28 @@ class AppViewModel:
 
                 # Lưu các chỉ số r2 và rmse vào session_state để hiển thị trong sidebar
                 if metrics:
-                    st.session_state.model_r2_score = metrics.r2 if hasattr(metrics, 'r2') else 0.0
-                    st.session_state.model_rmse = metrics.rmse if hasattr(metrics, 'rmse') else 0.0
-                    logger.info(f"Đã lưu các chỉ số mô hình: R2 = {st.session_state.model_r2_score}, RMSE = {st.session_state.model_rmse}")
+                    logger.info(f"Đối tượng metrics nhận được từ quá trình huấn luyện mô hình: {metrics.__dict__ if hasattr(metrics, '__dict__') else 'Không có thuộc tính __dict__'}")
+                    logger.info(f"Thuộc tính của metrics - r2: {hasattr(metrics, 'r2')}, rmse: {hasattr(metrics, 'rmse')}")
 
-                # Hiển thị các chỉ số
-                progress_bar.progress(100, text="Hoàn thành!")
+                    if hasattr(metrics, 'r2'):
+                        logger.info(f"Giá trị gốc của metrics.r2: {metrics.r2}")
+                        st.session_state.model_r2_score = metrics.r2
+                    else:
+                        logger.warning("Đối tượng metrics không có thuộc tính r2, sử dụng giá trị mặc định 0.0")
+                        st.session_state.model_r2_score = 0.0
+
+                    if hasattr(metrics, 'rmse'):
+                        logger.info(f"Giá trị gốc của metrics.rmse: {metrics.rmse}")
+                        st.session_state.model_rmse = metrics.rmse
+                    else:
+                        logger.warning("Đối tượng metrics không có thuộc tính rmse, sử dụng giá trị mặc định 0.0")
+                        st.session_state.model_rmse = 0.0
+
+                    logger.info(f"Đã lưu các chỉ số mô hình vào session state: R2 = {st.session_state.model_r2_score}, RMSE = {st.session_state.model_rmse}")
+                else:
+                    logger.error("Không nhận được đối tượng metrics từ quá trình huấn luyện mô hình!")
+                    st.session_state.model_r2_score = 0.0
+                    st.session_state.model_rmse = 0.0
 
                 logger.info("Đã huấn luyện mô hình thành công")
                 return True

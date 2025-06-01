@@ -1,12 +1,10 @@
 # MARK: - Thư viện
 
 import streamlit as st
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 import pandas as pd
 import numpy as np
 
-from src.services.data_service import DataService
-from src.services.model_service import ModelService
 from src.models.real_estate_model import PredictionResult
 from src.utils.logger_util import get_logger
 
@@ -54,6 +52,26 @@ class PredictionViewModel:
 
         if 'prediction_history' not in st.session_state:
             st.session_state.prediction_history = []
+
+        # Tự động tải mô hình đã huấn luyện khi khởi động ứng dụng
+        if 'model_trained' not in st.session_state or 'model_pipeline' not in st.session_state:
+            try:
+                logger.info("Automatically loading pre-trained model at startup")
+                model, success = self._model_service.load_model()
+                if success and model is not None:
+                    st.session_state.model_trained = True
+                    st.session_state.model_pipeline = model
+                    st.session_state.using_spark = True
+                    st.session_state.using_fallback = False
+                    logger.info("Successfully loaded pre-trained model at startup")
+                else:
+                    st.session_state.model_trained = False
+                    st.session_state.model_pipeline = None
+                    logger.warning("Could not load pre-trained model at startup")
+            except Exception as e:
+                logger.error(f"Error loading pre-trained model at startup: {e}")
+                st.session_state.model_trained = False
+                st.session_state.model_pipeline = None
 
     # MARK: - Lấy dữ liệu danh mục
 
@@ -143,24 +161,47 @@ class PredictionViewModel:
 
     # MARK: - Dự đoán
 
-    def predict(self) -> Optional[PredictionResult]:
+    def predict(self) -> PredictionResult:
         """
         Dự đoán giá bất động sản dựa trên đầu vào của người dùng
 
         Returns:
-            Optional[PredictionResult]: Kết quả dự đoán, None nếu có lỗi
+            PredictionResult: Kết quả dự đoán với thông báo lỗi nếu có
         """
         try:
             # Kiểm tra xem có đầu vào không
             if not st.session_state.prediction_input:
                 logger.warning("Không có đầu vào cho dự đoán")
-                return None
+                return PredictionResult(
+                    predicted_price=0,
+                    confidence_level=0,
+                    price_range_low=0,
+                    price_range_high=0,
+                    error_message="Không có dữ liệu đầu vào cho dự đoán"
+                )
 
             # Lấy dữ liệu
             data = self._get_data()
             if data is None:
                 logger.error("Không có dữ liệu để dự đoán")
-                return None
+                return PredictionResult(
+                    predicted_price=0,
+                    confidence_level=0,
+                    price_range_low=0,
+                    price_range_high=0,
+                    error_message="Không thể tải dữ liệu để dự đoán"
+                )
+
+            # Kiểm tra xem mô hình đã được huấn luyện chưa
+            if not st.session_state.get("model_trained", False):
+                logger.warning("Mô hình chưa được huấn luyện trước khi dự đoán")
+                return PredictionResult(
+                    predicted_price=0,
+                    confidence_level=0,
+                    price_range_low=0,
+                    price_range_high=0,
+                    error_message="Mô hình chưa được huấn luyện. Vui lòng huấn luyện mô hình trước khi dự đoán."
+                )
 
             # Dự đoán giá
             prediction_result = self._model_service.predict(
@@ -171,8 +212,8 @@ class PredictionViewModel:
             # Lưu kết quả dự đoán vào session state
             st.session_state.prediction_result = prediction_result
 
-            # Thêm vào lịch sử dự đoán
-            if prediction_result.predicted_price > 0:
+            # Thêm vào lịch sử dự đoán nếu không có lỗi và giá trị dự đoán hợp lệ
+            if not prediction_result.error_message and prediction_result.predicted_price > 0:
                 self._add_to_history(
                     input_data=st.session_state.prediction_input.copy(),
                     result=prediction_result
@@ -182,7 +223,13 @@ class PredictionViewModel:
 
         except Exception as e:
             logger.error(f"Lỗi khi dự đoán giá bất động sản: {e}")
-            return None
+            return PredictionResult(
+                predicted_price=0,
+                confidence_level=0,
+                price_range_low=0,
+                price_range_high=0,
+                error_message=f"Lỗi khi dự đoán: {str(e)}"
+            )
 
     # MARK: - Quản lý lịch sử
 

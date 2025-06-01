@@ -197,9 +197,21 @@ def render_prediction_view(viewmodel: PredictionViewModel):
                 # Thực hiện dự đoán
                 prediction_result = viewmodel.predict()
 
-                # Kiểm tra kết quả dự đoán
-                if prediction_result is None or not hasattr(prediction_result, 'predicted_price'):
-                    st.error("Không thể dự đoán giá. Vui lòng thử lại sau.")
+                # Kiểm tra kết quả dự đoán và lỗi
+                if prediction_result is None:
+                    st.error("Không thể dự đoán giá. Vui lòng kiểm tra lại dữ liệu đầu vào.")
+                    return
+                
+                # Kiểm tra thông báo lỗi
+                if hasattr(prediction_result, 'error_message') and prediction_result.error_message:
+                    st.error(f"Lỗi khi dự đoán: {prediction_result.error_message}")
+                    st.warning("Vui lòng huấn luyện mô hình trước khi dự đoán. Bạn có thể huấn luyện mô hình trong phần Phân tích.")
+                    return
+                    
+                # Kiểm tra giá trị dự đoán
+                if not hasattr(prediction_result, 'predicted_price') or prediction_result.predicted_price <= 0:
+                    st.error("Không thể tính toán giá trị dự đoán hợp lệ. Vui lòng kiểm tra lại dữ liệu đầu vào.")
+                    return
                 else:
                     # Lấy giá trị dự đoán
                     total_price = prediction_result.predicted_price
@@ -368,4 +380,6 @@ def render_prediction_view(viewmodel: PredictionViewModel):
                 st.markdown('</div>', unsafe_allow_html=True)
 
             except Exception as e:
-                st.error(f"Lỗi khi dự đoán: {e}")
+                logger.error(f"Lỗi khi dự đoán trong view: {e}")
+                st.error("Xảy ra lỗi khi dự đoán giá. Vui lòng huấn luyện mô hình trước trong phần Phân tích và thử lại.")
+                st.info("Chi tiết lỗi: " + str(e))

@@ -13,11 +13,6 @@ import sys
 import time
 import traceback
 
-# Thêm đường dẫn gốc vào sys.path
-app_path = os.path.dirname(os.path.abspath(__file__))
-if app_path not in sys.path:
-    sys.path.append(app_path)
-
 # Import các module của ứng dụng
 from src.config.app_config import AppConfig
 from src.utils.logger_util import get_logger
@@ -38,8 +33,25 @@ from src.views.prediction_view import render_prediction_view
 from src.views.analytics_view import render_analytics_view
 from src.views.about_view import render_about_view
 
+# MARK: - Cấu hình
+
 # Khởi tạo logger
 logger = get_logger(__name__)
+
+# Thiết lập biến môi trường cho PySpark
+os.environ['SPARK_HOME'] = AppConfig.SPARK_HOME # Đường dẫn đến thư mục PySpark
+
+# Cập nhật PYTHONPATH để tìm thấy PySpark
+pyspark_python = os.path.join(os.environ['SPARK_HOME'], 'python')
+py4j = os.path.join(pyspark_python, 'lib', 'py4j-0.10.9-src.zip')
+if pyspark_python not in sys.path:
+    sys.path.insert(0, pyspark_python)
+    sys.path.insert(0, py4j)
+
+# Thêm đường dẫn gốc vào sys.path
+app_path = os.path.dirname(os.path.abspath(__file__))
+if app_path not in sys.path:
+    sys.path.append(app_path)
 
 # Cấu hình trang Streamlit
 st.set_page_config(
@@ -77,11 +89,19 @@ def main():
             _data_service=services["data_service"],
             _model_service=services["model_service"]
         )
-        logger.info("Đã khởi tạo AppViewModel")
+
     except Exception as e:
         logger.error(f"Lỗi khởi tạo AppViewModel: {str(e)}")
         st.error(f"Lỗi khởi tạo ViewModel chính: {str(e)}")
         return
+
+    # Đảm bảo dữ liệu được tải và mô hình được huấn luyện
+    logger.info("Đảm bảo dữ liệu được tải và mô hình được huấn luyện")
+    if app_viewmodel.load_data():
+        logger.info("Dữ liệu đã được tải thành công, huấn luyện mô hình nếu cần")
+        model_trained = app_viewmodel.train_model_if_needed()
+        logger.info(f"Trạng thái huấn luyện mô hình: {model_trained}")
+        logger.info(f"Các chỉ số hiện tại trong session state sau khi huấn luyện: R2={st.session_state.get('model_r2_score', 0.0)}, RMSE={st.session_state.get('model_rmse', 0.0)}")
 
     # Hiển thị sidebar và lấy chế độ ứng dụng hiện tại
     app_modes = AppConfig.APP_MODES
@@ -92,14 +112,17 @@ def main():
     try:
         if current_mode == AppConfig.APP_MODES[0]:
             render_prediction_view(viewmodels["prediction_viewmodel"])
+
         elif current_mode == AppConfig.APP_MODES[1]:
             render_analytics_view(viewmodels["analytics_viewmodel"])
+
         elif current_mode == AppConfig.APP_MODES[2]:
             render_about_view()
+
         else:
             st.error(f"Không tìm thấy chế độ {current_mode}")
+
     except Exception as e:
-        logger.error(f"Lỗi khi hiển thị {current_mode} view: {str(e)}")
         st.error(f"Đã xảy ra lỗi khi hiển thị giao diện: {str(e)}")
         if st.checkbox("Hiện chi tiết lỗi"):
             st.code(traceback.format_exc())
@@ -130,7 +153,7 @@ def initialize_session_state():
     if "using_fallback" not in st.session_state:
         st.session_state.using_fallback = False
 
-    logger.info("Đã khởi tạo session state")
+    logger.info("Đã khởi tạo Session State")
 
 # MARK: - Tải tài nguyên
 
@@ -160,10 +183,10 @@ def initialize_services() -> Dict[str, Any]:
             cache_dir=os.path.join(AppConfig.get_base_dir(), 'cache')
         )
         services["data_service"] = data_service
-        logger.info("Đã khởi tạo DataService")
+
     except Exception as e:
         logger.error(f"Lỗi khởi tạo DataService: {str(e)}")
-        st.error(f"Lỗi khởi tạo dịch vụ dữ liệu: {str(e)}")
+        st.error(f"Có lỗi xảy ra!")
 
     # Khởi tạo ModelService
     try:
@@ -181,10 +204,10 @@ def initialize_services() -> Dict[str, Any]:
             using_spark=spark_available
         )
         services["model_service"] = model_service
-        logger.info(f"Đã khởi tạo ModelService (using_spark={spark_available})")
+
     except Exception as e:
         logger.error(f"Lỗi khởi tạo ModelService: {str(e)}")
-        st.error(f"Lỗi khởi tạo dịch vụ mô hình: {str(e)}")
+        st.error(f"Có lỗi xảy ra!")
 
     return services
 
@@ -210,9 +233,9 @@ def initialize_viewmodels(services: Dict[str, Any]) -> Dict[str, Any]:
             _model_service=services["model_service"]
         )
         viewmodels["prediction_viewmodel"] = prediction_vm
-        logger.info("Đã khởi tạo PredictionViewModel")
+
     except Exception as e:
-        logger.error(f"Lỗi khởi tạo PredictionViewModel: {str(e)}")
+        logger.error(f"Có lỗi xảy ra!")
 
     # Khởi tạo AnalyticsViewModel
     try:
@@ -220,9 +243,9 @@ def initialize_viewmodels(services: Dict[str, Any]) -> Dict[str, Any]:
             _data_service=services["data_service"]
         )
         viewmodels["analytics_viewmodel"] = analytics_vm
-        logger.info("Đã khởi tạo AnalyticsViewModel")
+
     except Exception as e:
-        logger.error(f"Lỗi khởi tạo AnalyticsViewModel: {str(e)}")
+        logger.error(f"Có lỗi xảy ra!")
 
     return viewmodels
 
