@@ -1,84 +1,84 @@
-# ỨNG DỤNG DỰ ĐOÁN GIÁ BẤT ĐỘNG SẢN VIỆT NAM
+# VIETNAM REAL ESTATE PRICE PREDICTION APPLICATION
 
-> **MÔN HỌC**: DỮ LIỆU LỚN VÀ ỨNG DỤNG
+> **COURSE**: BIG DATA AND APPLICATIONS
 
-## Nhóm phát triển
+## Development Team
 
-- **Lê Thị Cẩm Giang** - Tác giả  <https://github.com/lcg1908>
-- **Nguyễn Quỳnh Anh** - Đồng tác giả  <https://github.com/Quynanhng25>
-- **Nguyễn Cao Hoài Duyên** - Đồng tác giả <https://github.com/CaoHoaiDuyen>
-- **Đinh Trương Ngọc Quỳnh Hoa** - Đồng tác giả <https://github.com/QHoa036>
-- **Trần Hoàng Nghĩa** - Đồng tác giả <https://github.com/Blink713>
-- **Nguyễn Phương Thảo** - Đồng tác giả <https://github.com/thaonguyenbi>
+- **Lê Thị Cẩm Giang** - Author <https://github.com/lcg1908>
+- **Nguyễn Quỳnh Anh** - Co-author <https://github.com/Quynanhng25>
+- **Nguyễn Cao Hoài Duyên** - Co-author <https://github.com/CaoHoaiDuyen>
+- **Đinh Trương Ngọc Quỳnh Hoa** - Co-author <https://github.com/QHoa036>
+- **Trần Hoàng Nghĩa** - Co-author <https://github.com/Blink713>
+- **Nguyễn Phương Thảo** - Co-author <https://github.com/thaonguyenbi>
 
-## Tổng quan
+## Overview
 
-Ứng dụng Dự đoán giá Bất động sản Việt Nam là một nền tảng hiện đại kết hợp công nghệ PySpark, học máy và Streamlit để cung cấp:
+The Vietnam Real Estate Price Prediction application is a modern platform that combines PySpark, machine learning, and Streamlit technologies to provide:
 
-- **Dự đoán giá bất động sản** chính xác dựa trên các đặc điểm của tài sản
-- **Phân tích thị trường** với giao diện trực quan, hiện đại và tương tác
-- **Xu hướng giá** theo khu vực, thời gian và các yếu tố ảnh hưởng
-- **Trải nghiệm người dùng** đa nền tảng và dễ sử dụng
+- **Accurate real estate price predictions** based on property characteristics
+- **Market analysis** with an intuitive, modern, and interactive interface
+- **Price trends** by region, time, and influencing factors
+- **A cross-platform and user-friendly experience**
 
-## Cấu trúc dự án
+## Project Structure
 
 ```bash
 Vietnam_Real_Estate_Price_Prediction/
-├── App/                            # Ứng dụng chính
-│   ├── src/                        # Mã nguồn
-│   │   ├── data/                   # Dữ liệu mẫu
-│   │   ├── logs/                   # Nhật ký hệ thống
-│   │   ├── styles/                 # CSS và giao diện
-│   │   └── utils/                  # Tiện ích
-│   └── vn_real_estate_app.py       # Ứng dụng chính
-├── References/                     # Tài liệu tham khảo
-├── .env.example                    # Mẫu cấu hình biến môi trường
-├── requirements.txt                # Danh sách thư viện
-└── run_app.sh                      # Script chạy ứng dụng (đa nền tảng)
+├── App/                            # Main Application
+│   ├── src/                        # Source Code
+│   │   ├── data/                   # Sample Data
+│   │   ├── logs/                   # System Logs
+│   │   ├── styles/                 # CSS and Interface
+│   │   └── utils/                  # Utilities
+│   └── vn_real_estate_app.py       # Main application file
+├── References/                     # Reference Documents
+├── .env.example                    # Environment variable configuration template
+├── requirements.txt                # Library list
+└── run_app.sh                      # Application run script (cross-platform)
 ```
 
-## Hướng dẫn cài đặt và sử dụng
+## Installation and Usage Guide
 
-### Yêu cầu hệ thống
+### System Requirements
 
 - **Python 3.8+**
-- **Java Runtime Environment (JRE)** (cho PySpark)
-- **Git Bash** (khuyến nghị cho Windows)
+- **Java Runtime Environment (JRE)** (for PySpark)
+- **Git Bash** (recommended for Windows)
 
-### Cài đặt và chạy ứng dụng
+### Installation and Running the Application
 
-Ứng dụng hỗ trợ nhiều nền tảng (Windows, macOS, Linux) với một lệnh duy nhất:
+The application supports multiple platforms (Windows, macOS, Linux) with a single command:
 
 ```bash
 ./run_app.sh
 ```
 
-Script này sẽ tự động:
+This script will automatically:
 
-1. Phát hiện hệ điều hành và thiết lập môi trường phù hợp
-2. Cài đặt các dependency cần thiết
-3. Tạo và kích hoạt môi trường ảo Python
-4. Hỏi người dùng có muốn sử dụng Ngrok để tạo URL công khai
-5. Khởi chạy ứng dụng Streamlit
+1. Detect the operating system and set up the environment accordingly
+2. Install the necessary dependencies
+3. Create and activate the Python virtual environment
+4. Ask the user if they want to use Ngrok to create a public URL
+5. Run the Streamlit application
 
-### Sử dụng với Ngrok
+### Using with Ngrok
 
-Để chia sẻ ứng dụng qua URL công khai:
+To share the application via a public URL:
 
-1. Đăng ký tài khoản tại [ngrok.com](https://ngrok.com)
-2. Lấy authtoken từ dashboard
-3. Nhập authtoken vào file env.local
-4. Chọn 'y' khi được hỏi về việc sử dụng Ngrok
+1. Register for an account at [ngrok.com](https://ngrok.com)
+2. Get the authtoken from your dashboard
+3. Enter the authtoken into the `env.local` file
+4. Select 'y' when asked about using Ngrok
 
 
-## Thư viện chính
+## Key Libraries
 
-- **PySpark**: Xử lý dữ liệu lớn và xây dựng mô hình ML
-- **Streamlit**: Xây dựng giao diện web tương tác
-- **Pandas & NumPy**: Xử lý và phân tích dữ liệu
-- **Plotly & Matplotlib**: Trực quan hóa dữ liệu
-- **Ngrok**: Tạo URL công khai để chia sẻ ứng dụng
+- **PySpark**: For big data processing and building ML models
+- **Streamlit**: For building the interactive web interface
+- **Pandas & NumPy**: For data processing and analysis
+- **Plotly & Matplotlib**: For data visualization
+- **Ngrok**: For creating a public URL to share the application
 
-## Lời cảm ơn
+## Acknowledgements
 
-Nhóm chúng em xin gửi lời cảm ơn sâu sắc đến thầy Nguyễn Mạnh Tuấn, giảng viên bộ môn Dữ liệu lớn và ứng dụng tại Đại học UEH, vì đã tận tình hướng dẫn, truyền đạt kiến thức và kinh nghiệm quý báu giúp chúng em không chỉ nắm vững lý thuyết mà còn áp dụng vào thực tế. Xin chân thành cảm ơn thầy vì tâm huyết và sự nhiệt tình giúp nhóm hoàn thiện đề tài tốt nhất.
+Our team would like to express our sincere gratitude to Mr. Nguyen Manh Tuan, lecturer for the Big Data and Applications course at UEH University, for his dedicated guidance and for sharing valuable knowledge and experience that helped us not only to master the theory but also to apply it in practice. We sincerely thank him for his dedication and enthusiasm in helping our group complete this project to the best of our ability.
